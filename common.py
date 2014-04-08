@@ -52,8 +52,9 @@ def getName( node=None, side=None, rigPart=None, function=None, nodeType=None):
     typeDict needs filling up :-) - select a node and call cmds.ls(sl=1, showType=1)[1] to get the correct value
     
     '''
-    if not node and len( cmds.ls( sl=1 ) ) == 1:
-        node = cmds.ls( sl=1 )[0]
+    sel = cmds.ls( sl=1 )
+    if not node and len( sel ) == 1:
+        node = sel[0]
     
     if not node:
         raise RuntimeError, 'node not specified. You must either supply or select a single node.'
