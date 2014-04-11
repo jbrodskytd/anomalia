@@ -1,0 +1,1 @@
+{"joints": {"joint1": {"translate": [[0.0, 0.0, 0.0]]}}}

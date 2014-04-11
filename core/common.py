@@ -1,6 +1,7 @@
 # Module for generic centralised functions such as naming of objects / colour coding of controls etc...
 # Imports
 import maya.cmds as cmds
+import os
 
 
 
@@ -89,7 +90,10 @@ def getName( node=None, side=None, rigPart=None, function=None, nodeType=None):
     
     newName = '%s_%s_%s_%s' % ( side, rigPart, function, nodeType )
     return newName
-    
-    
-    
-    
+
+
+def getCharDir( char ):
+    '''
+    returns the directory path to the supplied character
+    '''
+    return os.path.join( os.path.dirname( __file__ ), '..', 'characters', char)

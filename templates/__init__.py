@@ -31,5 +31,4 @@ getImportList()
 for module in importList:
     mod = __import__(module, globals(), locals())
     reload(mod)
-
-print 'templates imported successfully'
+    print '%s imported successfully' % module

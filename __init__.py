@@ -4,7 +4,7 @@ importList = []
 
 def getImportList():
     # Add any subdirectories you want to import into this list
-    for module in ['core', 'systems', 'templates']:
+    for module in ['core', 'systems']:
         importList.append( module )
         
     # Will automatically add any modules in the current directory to importList
@@ -31,4 +31,5 @@ getImportList()
 for module in importList:
     mod = __import__(module, globals(), locals())
     reload(mod)
+    print '%s imported successfully' % module
     
