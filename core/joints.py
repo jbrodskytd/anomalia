@@ -2,6 +2,7 @@ import json
 import maya.cmds as cmds
 import os
 from anomalia.core import common as common
+from anomalia.core.utils import showDialog
 
 def writeJoints( char, jointList ):
     '''
@@ -21,11 +22,12 @@ def writeJoints( char, jointList ):
         
     jointDict = {'joints':joints}
     
-    charDir = common.getCharDir( char )
-    
-    f = open('%s/%s_joints.py' % (charDir, char), 'w')
+    charDir  = common.getCharDir( char )
+    charPath = charDir + '/' + char
+    f = open('%s_joints.py' % charPath, 'w')
     f.write(json.dumps(jointDict))
     f.close()
+    showDialog( 'Success!', 'Joint data dumped to file:\n"%s_joints.py".' % charPath )
     
 def readJoints( char ):
     '''
@@ -56,4 +58,3 @@ def buildJoints( char ):
         cmds.setAttr( '%s.tx' % j, jointDict['joints'][j]['translate'][0][0] )
         cmds.setAttr( '%s.ty' % j, jointDict['joints'][j]['translate'][0][1] )
         cmds.setAttr( '%s.tz' % j, jointDict['joints'][j]['translate'][0][2] )
-    
