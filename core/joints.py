@@ -13,21 +13,31 @@ def writeJoints( char, jointList ):
     
     ''' 
     joints = {}
+    xformAttrs = ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz', 'jox', 'joy', 'joz']
       
+    # Populate data
     for j in jointList:
         jointData = {}
-        jointData.setdefault( 'translate', cmds.getAttr('%s.t' % j))
+        for attr in xformAttrs:
+            jointData.setdefault( attr, cmds.getAttr('%s.%s' % (j, attr)))
         
         joints.setdefault( j, jointData )
         
     jointDict = {'joints':joints}
     
     charDir  = common.getCharDir( char )
-    charPath = charDir + '/' + char
-    f = open('%s_joints.py' % charPath, 'w')
+    jointFile = os.path.join( charDir, '%s_joints.py' % char)
+    
+    # Check to see if file exists
+    if os.path.isfile(jointFile):
+        if cmds.confirmDialog(title='WARNING', message='Overwrite existing joint data?', button=['yes', 'no']) != 'yes':
+            return 'User cancelled'
+    
+    # Write data to disk    
+    f = open(jointFile, 'w')
     f.write(json.dumps(jointDict))
     f.close()
-    showDialog( 'Success!', 'Joint data dumped to file:\n"%s_joints.py".' % charPath )
+    showDialog( 'Success!', 'Joint data dumped to file:\n"%s_joints.py".' % jointFile )
     
 def readJoints( char ):
     '''
@@ -53,8 +63,9 @@ def buildJoints( char ):
     If this fails, loads in the data from the default character
     
     '''
+    xformAttrs = ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz', 'jox', 'joy', 'joz']
+    
     jointDict = readJoints( char )
     for j in jointDict['joints'].keys():
-        cmds.setAttr( '%s.tx' % j, jointDict['joints'][j]['translate'][0][0] )
-        cmds.setAttr( '%s.ty' % j, jointDict['joints'][j]['translate'][0][1] )
-        cmds.setAttr( '%s.tz' % j, jointDict['joints'][j]['translate'][0][2] )
+        for attr in xformAttrs:
+            cmds.setAttr( '%s.%s' % (j, attr), jointDict['joints'][j][attr] )

@@ -91,9 +91,53 @@ def getName( node=None, side=None, rigPart=None, function=None, nodeType=None):
     newName = '%s_%s_%s_%s' % ( side, rigPart, function, nodeType )
     return newName
 
+######################################################################################################################################################
 
 def getCharDir( char ):
     '''
     returns the directory path to the supplied character
     '''
     return os.path.join( os.path.dirname( __file__ ), '..', 'characters', char)
+
+######################################################################################################################################################
+### Functions to return the side / rigPart / function / type of a node
+def getSide(node):
+    return node.split('_')[0]
+
+def getRigPart(node):
+    return node.split('_')[1]
+
+def getFunction(node):
+    return node.split('_')[2]
+
+def getNodeType(node):
+    return node.split('_')[3]
+
+
+######################################################################################################################################################
+
+def getNodesOfType(side=None, rigPart=None, function=None, nodeType=None, contains=None):
+    '''
+    returns list of nodes matching search criteria.
+    
+    '''
+    
+    allNodes = cmds.ls()
+    returnNodes = []
+    for node in allNodes:
+        if side and getSide(node) != side:
+            continue
+        if rigPart and getRigPart(node) != rigPart:
+            continue
+        if function and getFunction(node) != function:
+            continue
+        if nodeType and getNodeType(node) != nodeType:
+            continue
+        if contains and node.find(contains) == -1:
+            continue
+        returnNodes.append(node)
+        
+    return returnNodes
+
+
+
