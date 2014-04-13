@@ -30,10 +30,15 @@ def writeJoints( char, jointList ):
     
     # Check to see if file exists
     if os.path.isfile(jointFile):
-        if cmds.confirmDialog(title='WARNING', message='Overwrite existing joint data?', button=['yes', 'no']) != 'yes':
+        if showDialog( title='WARNING', message='Overwrite existing joint data?', button=['yes', 'no'] ) != 'yes':
             return 'User cancelled'
-    
-    # Write data to disk    
+
+    # Make sure a destination folder exists
+    destDir = os.path.dirname( jointFile )
+    if not os.path.exists( destDir ):
+        os.makedirs( destDir )
+
+    # Write data to disk
     f = open(jointFile, 'w')
     f.write(json.dumps(jointDict))
     f.close()
