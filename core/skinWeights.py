@@ -4,7 +4,7 @@ import os
 from anomalia.core import common as common
 from anomalia.core.utils import showDialog
 
-def writeWeights( char, mesh ):
+def writeWeights( char, mesh = '' ):
 	'''
 	function to save vertex weights to a json file
 	weights are stored in a dictionary called skinWeights with a key for every vertex
@@ -18,7 +18,7 @@ def writeWeights( char, mesh ):
 		return cmds.warning('No character selected. Please supply a character name in function call.')
 
 	# abort if there no mesh supplied or selected
-	if cmds.nodeType( mesh ) == None:
+	if mesh == '':
 		mesh = cmds.ls(sl=1)[0]
 		if mesh == []:
 			return cmds.warning('No mesh to export weights from. Please select a mesh.')
@@ -37,7 +37,7 @@ def writeWeights( char, mesh ):
 	charDir = common.getCharDir( char )
 	skinWeightsFile = os.path.join( charDir, '%s_skin.py' % char)
 
-	if os.path.isFile(skinWeightsFile):
+	if os.path.isfile(skinWeightsFile):
 		if cmds.confirmDialog( title = 'Warning', message = 'Overwrite existing skin weights data?', button = ['yes', 'no'] ) != 'yes':
 			return 'User cancelled'
 
@@ -72,3 +72,11 @@ def writeWeights( char, mesh ):
 	f.write(json.dumps(skinWeights))
 	f.close()
 	showDialog( 'Succss!', 'Skin weights saved to file:\n"%s_skin.py".' % skinWeightsFile)
+
+
+def applyWeights():
+
+	# get path to skin file
+	charDir = common.getCharDir( char )
+	skinWeightsFile = os.path.join( charDir, '%s_skin.py' % char)
+	print("applyapplyapplyapplyapply")
