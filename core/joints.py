@@ -36,7 +36,10 @@ def writeJoints( char, jointList ):
     # Make sure a destination folder exists
     destDir = os.path.dirname( jointFile )
     if not os.path.exists( destDir ):
-        os.makedirs( destDir )
+        if showDialog( title='WARNING', message='Character %s Does not exist.\n Would you like to create it now?' % char, button=['yes', 'no'] ) != 'yes':
+            return 'User cancelled'
+        else:
+            os.makedirs( destDir )
 
     # Write data to disk
     f = open(jointFile, 'w')
@@ -53,6 +56,8 @@ def readJoints( char ):
     '''
     jointFile = os.path.join(common.getCharDir( char ), '%s_joints.py' % char)
     if not os.path.exists(jointFile):
+        if showDialog( title='WARNING', message='Character %s joint data not found.\n Would you like to load default joint data?' % char, button=['yes', 'no'] ) != 'yes':
+            return 'User cancelled'
         jointFile = os.path.join(common.getCharDir( 'defaultChar' ), 'defaultChar_joints.py')
         
     f = open(jointFile, 'r')
@@ -74,3 +79,31 @@ def buildJoints( char ):
     for j in jointDict['joints'].keys():
         for attr in xformAttrs:
             cmds.setAttr( '%s.%s' % (j, attr), jointDict['joints'][j][attr] )
+            
+def importSkel( char ):
+    '''
+    imports the charName_skel.ma file from the character's directory if one exists.
+    If no file exists, asks whether you want to import the default skel.
+    
+    '''
+    skelFile = os.path.join(common.getCharDir( char ), '%s_skel.ma' % char)
+    if not os.path.exists(skelFile):
+        if showDialog( title='WARNING', message='Character %s skeleton file not found.\n Would you like to load default skeleton?' % char, button=['yes', 'no'] ) != 'yes':
+            return 'User cancelled'
+        skelFile = os.path.join(common.getCharDir( 'defaultChar' ), 'defaultChar_skel.ma')
+        
+    cmds.file(skelFile, i=1, dns=1)
+    
+def exportSkel( char, jointList ):
+    '''
+    exports the charName_skel.ma file from the supplied jointlist.
+    If file exists, asks whether you want to overwrite.
+    
+    '''
+    skelFile = os.path.join(common.getCharDir( char ), '%s_skel.ma' % char)
+    if os.path.exists(skelFile):
+        if showDialog( title='WARNING', message='Character %s skeleton file Exists.\n Overwrite File?' % char, button=['yes', 'no'] ) != 'yes':
+            return 'User cancelled'
+        
+    cmds.select(jointList)
+    cmds.file(skelFile, es=1, f=1, type='mayaAscii')
