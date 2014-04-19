@@ -1,16 +1,13 @@
 import json
-import maya.cmds as cmds
 import os
+import maya.cmds as cmds
+import maya.OpenMaya as om
+import maya.OpenMayaAnim as oma
 from anomalia.core import common as common
 from anomalia.core.utils import showDialog
 
-def writeWeights( char, mesh = '' ):
+def getSkinWeights( char = '', meshName = '' ):
 	'''
-	function to save vertex weights to a json file
-	weights are stored in a dictionary called skinWeights with a key for every vertex
-	the value for the key vertex in another dictionary containing a key for every joint that has influence on that vertex,
-	the value being the actual weight of that joint on that vertex
-	{vertexId: {jointId: [weight, jointName]}}
 	'''
 
 	# check function requirements
@@ -19,19 +16,20 @@ def writeWeights( char, mesh = '' ):
 		return cmds.warning('No character selected. Please supply a character name in function call.')
 
 	# abort if there no mesh supplied or selected
-	if mesh == '':
-		mesh = cmds.ls(sl=1)[0]
-		if mesh == []:
+	if meshName == '':
+		meshName = cmds.ls(sl=1)[0]
+		print( 'No mesh supplied as param, attempting to use from selected object(%s).' % meshName )
+		if meshName == []:
 			return cmds.warning('No mesh to export weights from. Please select a mesh.')
 
 	# find skinCluster by checking if there is a node of type skinCluster connected to the shape
-	skinClusterName = ''
-	for each in cmds.listConnections( cmds.listRelatives( mesh, shapes = True )[0] ):
+	clusterName = ''
+	for each in cmds.listConnections( cmds.listRelatives( meshName, shapes = True )[0] ):
 		if cmds.nodeType( each ) == "skinCluster":
-			skinClusterName = each
+			clusterName = each
 
 	# abort if there is no skinCluster
-	if skinClusterName == '':
+	if clusterName == '':
 		return cmds.warning('No skinCluster found, mesh is not bound to a skeleton?')
 
 	#check if output file already exists
@@ -41,69 +39,130 @@ def writeWeights( char, mesh = '' ):
 	if os.path.isfile(skinWeightsFile):
 		if cmds.confirmDialog( title = 'Warning', message = 'Overwrite existing skin weights data?', button = ['yes', 'no'] ) != 'yes':
 			return 'User cancelled'
-
-
-	# main function work
-	# get names and number of influnces / joints
-	influences = cmds.skinCluster( skinClusterName, q = True, weightedInfluence = True )
-	weightListLength = cmds.getAttr( skinClusterName + ".weightList", size = True )
-
-	# vertex centric output dictionary
-	skinWeightsDict = {}
-
-	for vertex in range(0, weightListLength):
-
-		# intermediate joint weight on this vertex dictionary
-		vertexWeights = {}
-
-		for influence in range( len(influences) ):
-
-			# get weight of current joint on the current vertex
-			weight = cmds.getAttr( skinClusterName + '.weightList' + '[' + str(vertex) + ']' + '.weights[' + str(influence) + ']' )
-
-			if weight != 0:
-				vertexWeights[influence] = { 'jointName' : influences[influence], 'weight' : weight }
-
-		skinWeightsDict[vertex] = vertexWeights
-
-	# write data to file
+			
+	#prune to get rid of 0 zero value indices
+	normState = cmds.getAttr( '%s.normalizeWeights' % clusterName )
+	cmds.setAttr( '%s.normalizeWeights' % clusterName, False )
+	cmds.skinPercent( clusterName, shapeName, normalize = False, pruneWeights = 0.01 )
+	cmds.setAttr('%s.normalizeWeights' % clusterName, normState )	
+	
+	# get the MFnSkinCluster for clusterName
+	selList = om.MSelectionList()
+	selList.add( clusterName )
+	clusterNode = om.MObject()
+	selList.getDependNode( 0, clusterNode )
+	skinFn = oma.MFnSkinCluster( clusterNode )
+	
+	# get the MDagPath for all influence
+	infDags = om.MDagPathArray()
+	skinFn.influenceObjects(infDags)
+	
+	# create a dictionary whose key is the MPlug indice id and 
+	# whose value is the influence list id
+	infIds = {}
+	infs = []
+	for i in xrange( infDags.length() ):
+		infPath = infDags[i].fullPathName()
+		infId = int(skinFn.indexForInfluenceObject( infDags[i] ) )
+		infIds[infId] = i
+		infs.append( infPath )
+	
+	# get weightList and weight plugs
+	weightListPlug = skinFn.findPlug('weightList')
+	weightsPlug = skinFn.findPlug('weights')
+	weightListAttr = weightListPlug.attribute()
+	weightsAttr = weightsPlug.attribute()
+	weightsInfIds = om.MIntArray()
+	
+	# the weights are stored in dictionary, the key is the vertId, 
+	# the value is another dictionary whose key is the influence id and 
+	# value is the weight for that influence
+	weights = {}
+	for vertId in xrange( weightListPlug.numElements() ):
+		vertWeights = {}
+		weightsPlug.selectAncestorLogicalIndex( vertId, weightListAttr )
+		
+		weightsPlug.getExistingArrayAttributeIndices( weightsInfIds )
+		
+		infPlug = om.MPlug( weightsPlug )
+		for infId in weightsInfIds:
+			
+			infPlug.selectAncestorLogicalIndex( infId, weightsAttr )
+			
+			try:
+				vertWeights[infIds[infId]] = infPlug.asDouble()
+			except KeyError: 
+				pass
+		
+		weights[vertId] = vertWeights		
+	
+	
+	#save data to file
 	f = open(skinWeightsFile, 'w')
-	f.write(json.dumps(skinWeightsDict))
+	f.write(json.dumps(weights))
 	f.close()
 	showDialog( 'Succss!', 'Skin weights saved to file:\n"%s_skin.py".' % skinWeightsFile)
+	
+	return weights
 
-	return skinWeightsDict
 
+def setSkinWeights( char = '', meshName = '' ):
 
-def applyWeights( char = "char2", skinClusterName = "skinCluster1" ):
-	'''
-	does not entirely work yet!
-	'''
+	## check function requirements
+	# abort if no char is given
+	if char == '':
+		return cmds.warning('No character selected. Please supply a character name in function call.')
+
+	# abort if there no mesh supplied or selected
+	if meshName == '':
+		meshName = cmds.ls(sl=1)[0]
+		print( 'No mesh supplied as param, attempting to use from selected object(%s).' % meshName )
+		if meshName == []:
+			return cmds.warning('No mesh to export weights from. Please select a mesh.')
 
 	# get path to skin file
 	charDir = common.getCharDir( char )
 	skinWeightsFile = os.path.join( charDir, '%s_skin.py' % char )
 
-	#use default skinWeightsFile if character specific file does not exist
+	# use default skinWeightsFile if character specific file does not exist
 	if not os.path.exists( skinWeightsFile ):
 		jointFile = os.path.join( common.getCharDir( 'defaultChar' ), 'defaultChar_joints.py' )
 		cmds.warning('Did not find skin weights file for selected character, using default character file.')
 
-	#read skin weights from file
+	# read skin weights from file
 	f = open( skinWeightsFile, 'r' )
-	skinWeightsDict = json.loads( f.readline() )
+	weights = json.loads( f.readline() )
 	f.close()
 
-	#set weights per vertex per influence object
-	for vertexId in skinWeightsDict:
+	# find skinCluster by checking if there is a node of type skinCluster connected to the shape
+	clusterName = ''
+	shapeName = cmds.listRelatives( meshName, shapes = True )[0]
+	for each in cmds.listConnections( shapeName ):
+		if cmds.nodeType( each ) == "skinCluster":
+			clusterName = each
+	
+	# unlock influences	
+	infs = cmds.skinCluster( clusterName, q = True, weightedInfluence = True )
+	for inf in infs:
+		cmds.setAttr( '%s.liw' %inf, False )
+		
+	# prune weights to get rid of weights not stored in skinWeightsFile
+	# normalize needs to be turned off for the prune to work
+	normState = cmds.getAttr( '%s.normalizeWeights' % clusterName )
+	cmds.setAttr( '%s.normalizeWeights' % clusterName, False )
+	cmds.skinPercent( clusterName, shapeName, normalize = False, pruneWeights = 100.0 )
+	cmds.setAttr('%s.normalizeWeights' % clusterName, normState )
+	
+	# set weights in skinCluster.weightsList[].weights[] to infValue
+	for vertId, weightData in weights.items():
+		weightListAttr = '%s.weightList[%s]' % ( clusterName, vertId )
+		for infId, infValue in weightData.items():
+			weightsAttr = '.weights[%s]' % infId
+			cmds.setAttr( weightListAttr + weightsAttr, infValue )
+	
+	showDialog( 'Succss!', 'Skin weights applied to %s from file:\n"%s_skin.py".' % ( meshName, skinWeightsFile) )
+		
+	return
 
-		#get nested vertex weights dictionary
-		vertexWeightDict = skinWeightsDict[vertexId]
-
-		for influenceId in vertexWeightDict:
-			cmds.setAttr( '.'.join([skinClusterName, 'weightList[' + str(vertexId) + ']', 'weights[' + str(influenceId) + ']']), vertexWeightDict[str(influenceId)]['weight'] )
-
-
-	showDialog( 'Succss!', 'Skin weights applied to mesh from file:\n"%s_skin.py".' % skinWeightsFile)
-
-	return skinWeightsDict
+#getSkinWeights( char = 'char2' )
+#setSkinWeights( char = 'char2' )
