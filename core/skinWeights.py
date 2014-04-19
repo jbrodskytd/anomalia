@@ -1,6 +1,7 @@
 import json
 import os
 import maya.cmds as cmds
+import maya.mel as mel
 import maya.OpenMaya as om
 import maya.OpenMayaAnim as oma
 from anomalia.core import common as common
@@ -22,11 +23,8 @@ def getSkinWeights( char = '', meshName = '' ):
 		if meshName == []:
 			return cmds.warning('No mesh to export weights from. Please select a mesh.')
 
-	# find skinCluster by checking if there is a node of type skinCluster connected to the shape
-	clusterName = ''
-	for each in cmds.listConnections( cmds.listRelatives( meshName, shapes = True )[0] ):
-		if cmds.nodeType( each ) == "skinCluster":
-			clusterName = each
+	# find skinCluster
+	clusterName = mel.eval('findRelatedSkinCluster '+ meshName)
 
 	# abort if there is no skinCluster
 	if clusterName == '':
@@ -42,6 +40,7 @@ def getSkinWeights( char = '', meshName = '' ):
 			
 	#prune to get rid of 0 zero value indices
 	normState = cmds.getAttr( '%s.normalizeWeights' % clusterName )
+	shapeName = cmds.listRelatives( meshName, shapes = True )[0]
 	cmds.setAttr( '%s.normalizeWeights' % clusterName, False )
 	cmds.skinPercent( clusterName, shapeName, normalize = False, pruneWeights = 0.01 )
 	cmds.setAttr('%s.normalizeWeights' % clusterName, normState )	
@@ -134,12 +133,8 @@ def setSkinWeights( char = '', meshName = '' ):
 	weights = json.loads( f.readline() )
 	f.close()
 
-	# find skinCluster by checking if there is a node of type skinCluster connected to the shape
-	clusterName = ''
-	shapeName = cmds.listRelatives( meshName, shapes = True )[0]
-	for each in cmds.listConnections( shapeName ):
-		if cmds.nodeType( each ) == "skinCluster":
-			clusterName = each
+	# find skinCluster 
+	clusterName = mel.eval('findRelatedSkinCluster '+ meshName)
 	
 	# unlock influences	
 	infs = cmds.skinCluster( clusterName, q = True, weightedInfluence = True )
@@ -149,6 +144,7 @@ def setSkinWeights( char = '', meshName = '' ):
 	# prune weights to get rid of weights not stored in skinWeightsFile
 	# normalize needs to be turned off for the prune to work
 	normState = cmds.getAttr( '%s.normalizeWeights' % clusterName )
+	shapeName = cmds.listRelatives( meshName, shapes = True )[0]
 	cmds.setAttr( '%s.normalizeWeights' % clusterName, False )
 	cmds.skinPercent( clusterName, shapeName, normalize = False, pruneWeights = 100.0 )
 	cmds.setAttr('%s.normalizeWeights' % clusterName, normState )
@@ -161,7 +157,7 @@ def setSkinWeights( char = '', meshName = '' ):
 			cmds.setAttr( weightListAttr + weightsAttr, infValue )
 	
 	showDialog( 'Succss!', 'Skin weights applied to %s from file:\n"%s_skin.py".' % ( meshName, skinWeightsFile) )
-		
+	
 	return
 
 #getSkinWeights( char = 'char2' )
