@@ -209,9 +209,14 @@ class Control(object):
         self.__aimCtrl()
         
         if self.size != 1:
-            for s in self.control.getShapes():
+            
+            shapes = cmds.listRelatives(self.control, shapes = True)
+            
+            for s in shapes:
                 
-                cmds.scale(s.cv, self.size, self.size, self.size, r = 1)
+                cmds.select("%s.cv[:]" % s)
+                cmds.scale(self.size, self.size, self.size, r = 1)
+                cmds.select(clear = True)
             
             cmds.delete(self.control, ch = 1)
         
@@ -227,15 +232,19 @@ class Control(object):
         y = 0
         z = 0
         
+        shapes = cmds.listRelatives(self.control, shapes = True)
+        
         if self.aimAxis == "y":
             z = 90
             
         elif self.aimAxis == "z":
             y = -90
             
-        for s in self.control.getShapes():
+        for s in shapes:
             
-            cmds.rotate(s.cv, 0, y, z, r = 1)
+            cmds.select("%s.cv[:]" % s)
+            cmds.rotate(0, y, z, r = 1)
+            cmds.select(clear = True)
             
                 
     def __groupHier(self, obj):
