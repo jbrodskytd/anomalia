@@ -11,7 +11,7 @@ from anomalia.core.utils import showDialog
 
 class Control(object):
     
-    def __init__(self, side = "cn", rigPart = "spine", function = "", nodeType = "ctrl", size = 1, color = "green", aimAxis = "x"):
+    def __init__(self, side = "cn", rigPart = "spine", function = "", nodeType = "ctrl", size = 1, color = "green", aimAxis = "x", group = False):
         
         
         '''
@@ -38,6 +38,8 @@ class Control(object):
         self.size               = size
         ## which axis the control is aiming at
         self.aimAxis            = aimAxis
+        ## create zero/offset grouping hierarchy
+        self.group              = group
         
         self.control = None
         self.controlGrp = None
@@ -220,7 +222,8 @@ class Control(object):
             
             cmds.delete(self.control, ch = 1)
         
-        self.controlGrp = self.__groupHier(self.control)
+        if self.group == True:
+            self.controlGrp = self.__groupHier(self.control)
         
     def __aimCtrl(self):
         
@@ -320,7 +323,7 @@ def exportControl(fileName = None, ctrl = None):
 
 from anomalia.core import controls as controls
 
-ctrlToCreate = controls.Control(side = "rt", rigPart = "spine", function = "test", nodeType = "ctrl", size = 2, color = "red", aimAxis = "x")
+ctrlToCreate = controls.Control(side = "rt", rigPart = "spine", function = "test", nodeType = "ctrl", size = 2, color = "red", aimAxis = "x", group = False)
 ctrlToCreate.crownCtrl()
 
 ################################################################
