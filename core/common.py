@@ -1,6 +1,8 @@
 # Module for generic centralised functions such as naming of objects / colour coding of controls etc...
 # Imports
 import maya.cmds as cmds
+import maya.OpenMaya as om
+from anomalia.core.utils import showDialog
 import os
 
 
@@ -139,5 +141,110 @@ def getNodesOfType(side=None, rigPart=None, function=None, nodeType=None, contai
         
     return returnNodes
 
+######################################################################################################################################################
 
+def pointsAlongVector( start='', end='', divisions=2 ):
+    '''
+    returns a list of points that lie on a line between start and end
+    'divisions' specifies the number of points to return.
+    divisions = 2 (default) will return the start and end points with one intermediate point: [ p1(start), p2, p3(end) ]
+    
+    start and end can be supplied as lists, tuples or nodes. If they are not supplied, and 2 scene nodes are selected
+    will attempt to use their world space positions as start and end
+        
+    creates a vector by subtracting end from start
+    stores length of vector
+    normalizes vector
+    multiplies normalized vector by length / divisions
+    
+    '''
 
+    if type( start ) == type( 'hello' ) or type( start ) == type( u'hello' ):
+        startPos = cmds.xform( str(start), translation=True, query=True, ws=True )
+    else:
+        startPos = start
+        
+    if type( end ) == type( 'hello' ) or type( end ) == type( u'hello' ):    
+        endPos = cmds.xform( str(end), translation=True, query=True, ws=True )
+    else:
+        endPos = end
+    
+    if not startPos or not endPos and len( cmds.ls( sl=True ) ) == 2:
+    
+        startPos = cmds.xform( cmds.ls( sl=True )[0], translation=True, query=True, ws=True )
+        endPos = cmds.xform( cmds.ls( sl=True )[1], translation=True, query=True, ws=True )
+        
+    if not startPos or not endPos:
+        return showDialog( 'Argument Error', 'Cannot determine start and end points' )
+        
+    startVec = om.MVector(startPos[0], startPos[1], startPos[2])
+    endVec = om.MVector(endPos[0], endPos[1], endPos[2])
+    newVec = endVec - startVec
+    segLength = newVec.length() / divisions
+    newVec.normalize()
+    
+    points = []
+    
+    points.append(tuple(startPos))
+
+    for p in range( 1, divisions ):
+        point = newVec * segLength * p + startVec
+        points.append((point.x, point.y, point.z))
+        
+    points.append(tuple(endPos))
+    
+    return points
+
+######################################################################################################################################################
+
+def insertGroup( node=None ):
+    '''
+    creates an empty group aligned to the selected node and inserts it into the hierarchy;
+    
+    '''
+    if not node:
+        node = cmds.ls(sl=1)[0]
+    if node:
+        parent = cmds.listRelatives(node, p=1)
+        grp = cmds.group(empty=1, n='%s_grp' % node)
+        align(node=grp, target=node)
+        if parent:
+            cmds.parent(grp, parent)
+        else:
+            cmds.parent(grp, w=1)
+            
+        cmds.parent(node, grp)
+    else:
+        return showDialog( 'Argument Error', 'Cannot determine the node you wish to group' )
+    
+    
+######################################################################################################################################################
+
+def align( node=None, target=None, translate=True, orient=True ):
+    '''
+    sets the translation and / or orientation of node to match target
+    
+    '''
+    
+    # Validate that the correct arguments have been supplied
+    if not node or not target:
+        # If hips, chest anf head aren't explicitly supplied, check for a valid selection to use 
+        sel = cmds.ls(sl=1, type='transform')
+        if len( sel ) == 2:
+            node, target = sel[0], sel[1]
+        else:
+            return showDialog( 'Argument Error', 'Cannot determine nodes to align' )
+
+    targetMatrix = cmds.xform( target, q=True, ws=1, matrix=True )
+    nodeMatrix = cmds.xform( node, q=True, ws=1, matrix=True )
+    
+    if translate and orient:
+        cmds.xform ( node, ws=1, matrix=targetMatrix )
+    elif translate:
+        # set row4 x y z to row4 of targetMatrix
+        nodeMatrix[ 12:-1 ] = targetMatrix[ 12:-1 ]
+        cmds.xform ( node, ws=1, matrix=nodeMatrix )
+    elif orient:
+        # set row4 x y z to row4 of nodeMatrix
+        targetMatrix[ 12:-1 ] = nodeMatrix[ 12:-1 ]
+        cmds.xform ( node, ws=1, matrix=targetMatrix )
