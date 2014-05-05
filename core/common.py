@@ -210,10 +210,10 @@ def insertGroup( node=None ):
         align(node=grp, target=node)
         if parent:
             cmds.parent(grp, parent)
-        else:
-            cmds.parent(grp, w=1)
             
         cmds.parent(node, grp)
+        
+        return grp
     else:
         return showDialog( 'Argument Error', 'Cannot determine the node you wish to group' )
     
@@ -228,7 +228,7 @@ def align( node=None, target=None, translate=True, orient=True ):
     
     # Validate that the correct arguments have been supplied
     if not node or not target:
-        # If hips, chest anf head aren't explicitly supplied, check for a valid selection to use 
+        # If node and target aren't explicitly supplied, check for a valid selection to use 
         sel = cmds.ls(sl=1, type='transform')
         if len( sel ) == 2:
             node, target = sel[0], sel[1]
@@ -248,3 +248,21 @@ def align( node=None, target=None, translate=True, orient=True ):
         # set row4 x y z to row4 of nodeMatrix
         targetMatrix[ 12:-1 ] = nodeMatrix[ 12:-1 ]
         cmds.xform ( node, ws=1, matrix=targetMatrix )
+        
+######################################################################################################################################################
+        
+def attrCtrl(lock=True, keyable=False, channelBox=False, nodeList=[], attrList=[]):
+    '''
+    Takes a list of nodes and sets locks/unlocks shows/hides attributes in attrList
+    
+    '''
+    if nodeList:
+        for node in nodeList:
+            if attrList:
+                for attr in attrList:
+                    if cmds.attributeQuery(attr, node=node, exists=True):
+                        cmds.setAttr('%s.%s' % (node, attr), lock=lock, keyable=keyable, channelBox=channelBox)
+            else:
+                return showDialog( 'Argument Error', 'No nodes supplied for attribute control' )
+    else:
+        return showDialog( 'Argument Error', 'No nodes supplied for attribute control' )
