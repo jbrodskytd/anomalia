@@ -3,7 +3,7 @@ from anomalia.core import common, controls
 
 from anomalia.core.utils import showDialog
 
-def build ( hips=None, chest=None, head=None, numSpineJoints=5, numHeadJoints=5, twistAxis='x', bendAxis='y', cleanUp=True ):
+def build ( hips=None, chest=None, head=None, numSpineJoints=6, numHeadJoints=6, twistAxis='x', bendAxis='y', cleanUp=True ):
     '''
     function to create the fk spine with head isolation...
     
@@ -63,7 +63,7 @@ def build ( hips=None, chest=None, head=None, numSpineJoints=5, numHeadJoints=5,
     cmds.parent(chestGrp, hipCtrl.control)
     
     headCtrl = controls.Control( side = "cn", rigPart = "spine", function = "head", nodeType = "ctrl", size = 1, color = "green", aimAxis = "twistAxis" )
-    headCtrl.circleCtrl()
+    headCtrl.crownCtrl()
     headGrp = common.insertGroup( node=headCtrl.control )
     headGrp = cmds.rename( headGrp, headCtrl.control.replace('ctrl', 'grp') )
     common.align( node=headGrp, target=head, orient=False )
