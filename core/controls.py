@@ -21,6 +21,7 @@ class Control(object):
         @param[in] size: this is the size that will be used as a base for all the names
         @param objColour: string, specify the colour of the chain
         @param[in] aimAxis: this is the aim axis used to orient the control, use only vector for x, y, z and their negatives
+        @param group: whether or not to add a zero/offset group
         
         '''
         
@@ -189,6 +190,14 @@ class Control(object):
         
         self.control = curve
         
+        shapes = cmds.listRelatives(self.control, shapes = True)
+        
+        for s in shapes:
+            
+            cmds.select("%s.cv[:]" % s)
+            cmds.rotate(0, 0, -90, r = 1)
+            cmds.select(clear = True)
+        
         self.__finaliseCtrl()
         common.colorize(self.color, nodeList = [self.control])
       
@@ -223,7 +232,9 @@ class Control(object):
             cmds.delete(self.control, ch = 1)
         
         if self.group == True:
-            self.controlGrp = self.__groupHier(self.control)
+            
+            common.insertGroup(self.control)
+            #self.controlGrp = self.__groupHier(self.control)
         
     def __aimCtrl(self):
         
@@ -253,10 +264,10 @@ class Control(object):
     def __groupHier(self, obj):
     
         '''
-        This procedure gets as an input a pymel object and groups it in order
+        This procedure gets an input and groups it in order
         to zero out the transformations
-        @param obj: PyNode, the object to zero out
-        @return: PyNode, the offset group
+        @param obj: the object to zero out
+        @return: the offset group
         '''
         
         # Create Grouping Hierarchy
