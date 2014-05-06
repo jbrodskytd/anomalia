@@ -45,6 +45,8 @@ def build ( hips=None, chest=None, head=None, numSpineJoints=6, numHeadJoints=6,
     xformGrp = cmds.duplicate(noXformGrp)
     xformGrp = cmds.rename(xformGrp, common.getName( node=xformGrp, side='cn', rigPart='spine', function='xform', nodeType='grp'))
     cmds.scaleConstraint( scaleGrp, xformGrp )
+    
+    cmds.parent( scaleGrp, noXformGrp )
             
     # Build control objects
     hipCtrl = controls.Control( side = "cn", rigPart = "spine", function = "hips", nodeType = "ctrl", size = 1, color = "green", aimAxis = "twistAxis" )
