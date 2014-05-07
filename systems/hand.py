@@ -100,8 +100,8 @@ def buildFinger( side, name, rootJnt, rootGrp, cleanUp ):
             
             if d < (len(dupJnts)-1):
                 # Build control
-                c = controls.Control( side=side, rigPart="hand", function='%s%s' % ( name, index ), nodeType="ctrl", size=1, color=side, aimAxis=twistAxis )
-                c.circleCtrl()
+                c = controls.Control( side=side, rigPart="hand", function='%s%s' % ( name, index ), nodeType="ctrl", size=0.15, color=side, aimAxis=twistAxis )
+                c.pinCtrl()
                 grp = common.insertGroup( node=c.control )
                 grp = cmds.rename( grp, c.control.replace('ctrl', 'grp') )
                 common.align( node=grp, target=j )
