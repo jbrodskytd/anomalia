@@ -76,8 +76,10 @@ class Control(object):
         line = cmds.curve(d = 1, p = [(0,0,0), (2,0,0)], k = [0,1], n = self.controlName)
         circle = cmds.circle(ch = 1, o = True, nr = (0,1,0), r = 0.5)[0]
         
-        cmds.move(2.5, 0, 0, circle.getShape().cv, r = 1)
-        cmds.parent(circle.getShape(), line, shape = 1, add = 1)
+        shapes = cmds.listRelatives(circle, shapes = True)[0]
+        
+        cmds.move(2.5, 0, 0, "%s.cv[:]" % shapes, r = 1)
+        cmds.parent(shapes, line, shape = 1, r = 1)
         
         cmds.delete(circle)
         cmds.select(cl = True)
