@@ -27,6 +27,9 @@ def colorize( color=None, nodeList=[] ):
                    'yellow':17,
                    'green':14,
                    'purple':9,
+                   'cn':14, # green
+                   'rt':13, # red
+                   'lf':6, # blue
                   }
     
     if type( color ) == type( 'hello' ) or type( color ) == type( u'hello' ):
@@ -266,3 +269,16 @@ def attrCtrl(lock=True, keyable=False, channelBox=False, nodeList=[], attrList=[
                 return showDialog( 'Argument Error', 'No nodes supplied for attribute control' )
     else:
         return showDialog( 'Argument Error', 'No nodes supplied for attribute control' )
+    
+######################################################################################################################################################
+
+def labelJoint( joint ):    
+    '''
+    using getSide and getFunction, will set up joint labelling for mirroring skin weights on overlapping joints
+    
+    '''
+    sideList = ['cn', 'lf', 'rt']
+     
+    cmds.setAttr('%s.side' % joint, sideList.index(getSide(joint)))
+    cmds.setAttr('%s.type' % joint, 18)
+    cmds.setAttr('%s.otherType' % joint, getFunction(joint), type='string')
