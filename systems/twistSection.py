@@ -1,5 +1,5 @@
 from maya import mel, cmds
-
+from anomalia.core.common import pointsAlongVector
 
 def build( side=None, name=None, startPos=None, endPos=None, jointCount=None, worldUpVector=None, worldUpObject=None, twistReader=None ):
     '''
@@ -31,13 +31,11 @@ def build( side=None, name=None, startPos=None, endPos=None, jointCount=None, wo
 
     axisDict = {'x':[1,0,0], 'y':[0,1,0], 'z':[0,0,1]}
 
-    # get start / end point for the twist section, and creates the intermediary ones by weighting
-    point1 = cmds.xform( startPos, query=True, worldSpace=True, translation=True )
-    point4 = cmds.xform( endPos, query=True, worldSpace=True, translation=True )
-    point2 = [(point1[0]+point4[0])*0.33, (point1[1]+point4[1])*0.33, (point1[2]+point4[2])*0.33]
-    point3 = [(point1[0]+point4[0])*0.66, (point1[1]+point4[1])*0.66, (point1[2]+point4[2])*0.66]
+    # get all points using the excellent function pointsAlongVector
+    endPoint = cmds.xform( endPos, translation=True, query=True, ws=True )
+    allPoints = pointsAlongVector( start=startPos, end=endPoint, divisions=3 )
     
-    crv = cmds.curve( d=3, p=(point1, point2, point3, point4), k=(0, 0, 0, 1, 1, 1), n=side+'_'+name+'_crv' )
+    crv = cmds.curve( d=3, p=(allPoints[0], allPoints[1], allPoints[2], allPoints[3]), k=(0, 0, 0, 1, 1, 1), n=side+'_'+name+'_crv' )
 
     # iterates over the jointCount to create the motionPath groups, mp nodes and joints
     uStep = 1.0/(jointCount-1)
@@ -59,6 +57,7 @@ def build( side=None, name=None, startPos=None, endPos=None, jointCount=None, wo
         cmds.setAttr( mpNode+'.worldUpVector', *axisDict[worldUpVector] )
         cmds.setAttr( mpNode+'.frontAxis', 0 ) # x
         cmds.setAttr( mpNode+'.upAxis', 2 )    # z
+        #cmds.setAttr( mpNode+'.inverseFront', 1 )
         
         cmds.connectAttr( worldUpObject+'.worldMatrix[0]', mpNode+'.worldUpMatrix' )
 

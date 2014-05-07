@@ -161,22 +161,21 @@ def pointsAlongVector( start='', end='', divisions=2 ):
     multiplies normalized vector by length / divisions
     
     '''
-
-    if type( start ) == type( 'hello' ) or type( start ) == type( u'hello' ):
-        startPos = cmds.xform( str(start), translation=True, query=True, ws=True )
-    else:
-        startPos = start
-        
-    if type( end ) == type( 'hello' ) or type( end ) == type( u'hello' ):    
-        endPos = cmds.xform( str(end), translation=True, query=True, ws=True )
-    else:
-        endPos = end
-    
-    if not startPos or not endPos and len( cmds.ls( sl=True ) ) == 2:
-    
+    startPos, endPos = None, None
+    if not start or not end and len( cmds.ls( sl=True ) ) == 2:
         startPos = cmds.xform( cmds.ls( sl=True )[0], translation=True, query=True, ws=True )
         endPos = cmds.xform( cmds.ls( sl=True )[1], translation=True, query=True, ws=True )
-        
+    else:
+        if type( start ) == type( 'hello' ) or type( start ) == type( u'hello' ):
+            startPos = cmds.xform( str(start), translation=True, query=True, ws=True )
+        else:
+            startPos = start
+            
+        if type( end ) == type( 'hello' ) or type( end ) == type( u'hello' ):    
+            endPos = cmds.xform( str(end), translation=True, query=True, ws=True )
+        else:
+            endPos = end
+
     if not startPos or not endPos:
         return showDialog( 'Argument Error', 'Cannot determine start and end points' )
         
