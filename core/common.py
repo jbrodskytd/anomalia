@@ -3,7 +3,7 @@
 import maya.cmds as cmds
 import maya.OpenMaya as om
 from anomalia.core.utils import showDialog
-import os
+import os, math
 
 
 
@@ -281,3 +281,27 @@ def labelJoint( joint ):
     cmds.setAttr('%s.side' % joint, sideList.index(getSide(joint)))
     cmds.setAttr('%s.type' % joint, 18)
     cmds.setAttr('%s.otherType' % joint, getFunction(joint), type='string')
+
+######################################################################################################################################################
+
+def getDistance( object1, object2 ):
+    '''
+    Calculates distance between two Transforms using magnitude
+    '''
+    def mag(numbers):
+        num = 0
+        for eachNumber in numbers:
+            num += pow(eachNumber, 2)
+            
+        mag = math.sqrt(num)
+        return mag
+
+    vector1 = (cmds.xform(object1, query=1, worldSpace=1, translation=1))
+    vector2 = (cmds.xform(object2, query=1, worldSpace=1, translation=1))
+    
+    calc = []
+    calc.append(vector1[0] - vector2[0])
+    calc.append(vector1[1] - vector2[1])
+    calc.append(vector1[2] - vector2[2])
+    
+    return mag(calc)
