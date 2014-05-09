@@ -85,6 +85,19 @@ class Control(object):
         cmds.select(cl = True)
         self.control = line
         
+        shapes = cmds.listRelatives(self.control, shapes = True)
+        
+        for s in shapes:
+            
+            cmds.select("%s.cv[:]" % s)
+            cmds.rotate(0, 0, 90, r = 1)
+            cmds.select(clear = True)
+            
+            if self.aimAxis == "y":
+                cmds.select("%s.cv[:]" % s)
+                cmds.rotate(-90, 0, 0, r = 1)
+                cmds.select(clear = True)
+        
         self.__finaliseCtrl()
         common.colorize(self.color, nodeList = [self.control])
         
@@ -190,6 +203,8 @@ class Control(object):
                                    (1.039, 0.027, -0.252), (1.045, 0.027, -0.258), (1.09, 0.135, -0.299), (1.100, 0.135, -0.305), (1.081, 0.135, -0.375), (1.055, 0.135, -0.442),
                                    (1.023, 0.135, -0.506)], name = self.controlName)
         
+        cmds.duplicate(curve)
+        
         self.control = curve
         
         shapes = cmds.listRelatives(self.control, shapes = True)
@@ -202,7 +217,46 @@ class Control(object):
         
         self.__finaliseCtrl()
         common.colorize(self.color, nodeList = [self.control])
-      
+        
+    def locatorCtrl(self):
+        
+        '''
+        Creates a locator controls
+        '''
+        
+        self.__buildName()
+        if not self.controlName:
+            return
+        
+        curveList = []
+        
+        for i in range(3):
+            
+            curve = cmds.curve(d = 1, p = [(0.0164983, -0.998716, -0.0164984), (0.0164983, 0.998716, -0.0164983), (-0.0164983, 0.998716, -0.0164983), (-0.0164983, -0.998716, -0.0164984), (-0.0164983, -0.998716, 0.0164983),
+                                           (-0.0164983, 0.998716, 0.0164984), (0.0164983, 0.998716, 0.0164984), (0.0164983, -0.998716, 0.0164983), (0.0163992, -0.998716, -0.0164984), (-0.0164983, -0.998716, -0.0164984), 
+                                           (-0.0164983, -0.998716, 0.0164983), (0.0164983, -0.998716, 0.0164983), (0.0164983, 0.998716, 0.0164984), (0.0164983, 0.998716, -0.0164983), (-0.0164983, 0.998716, -0.0164983), 
+                                           (-0.0164983, 0.998716, 0.0164984)], name = self.controlName)
+            curveList.append(curve)
+            
+        
+        cmds.rotate( 0, 0, 90, curveList[1])
+        cmds.makeIdentity(curveList[1], apply=True, t=1, r=1, s=1, n=0)
+        cmds.rotate( 90, 0, 0, curveList[2])
+        cmds.makeIdentity(curveList[2], apply=True, t=1, r=1, s=1, n=0)
+        
+        curveShape01 = cmds.listRelatives(curveList[1], shapes = True)[0]
+        curveShape02 = cmds.listRelatives(curveList[2], shapes = True)[0]
+        
+        cmds.parent(curveShape01, curveList[0], r = True, s = True) 
+        cmds.parent(curveShape02, curveList[0], r = True, s = True)
+        
+        cmds.delete(curveList[1], curveList[2])
+        
+        self.control = curveList[0]
+        
+        self.__finaliseCtrl()
+        common.colorize(self.color, nodeList = [self.control])
+              
     def __buildName(self):
         
         '''
