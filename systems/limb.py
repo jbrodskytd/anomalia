@@ -27,26 +27,12 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     cmds.parent( joint4, joint3 )
     cmds.parent( joint3, joint2 )
     cmds.parent( joint2, joint1 )
+    cmds.makeIdentity( joint1, apply=True )
 
     # auto color controls using the 'side' argument
     myColor  = 'green'
     if   side == 'lf': myColor = 'blue'
     elif side == 'rt': myColor = 'red'
-
-    ikHandle, effector = cmds.ikHandle( startJoint=joint1, endEffector=joint3, solver='ikRPsolver', n=side+'_'+name+'_ikHandle' )
-
-    pvCtrl   = controls.Control( side=side, rigPart=name, function='poleVec', nodeType="ctrl", size=1, color="green", aimAxis="twistAxis" )
-    pvCtrl.cubeCtrl()
-
-    # snaps the poleVector control to the middle joint
-    common.align( node=pvCtrl.control, target=joint2, orient=False )
-    pvCtrlGrp = common.insertGroup( node=pvCtrl.control )
-    cmds.poleVectorConstraint( pvCtrl.control, ikHandle )
-
-    # use this if polevector is not behind, maybe in the legs?
-    cmds.setAttr( pvCtrlGrp+'.tz', 5 )
-    cmds.setAttr( pvCtrlGrp+'.tz', -5 )
-        
 
     # creation of the start control (shoulder or hips offset)
     limbStartCtrl = controls.Control( side=side, rigPart='limb', function=name+'_start', nodeType='ctrl', size=1, color=myColor, aimAxis='z' )
@@ -60,7 +46,6 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     common.align( node=limbEndCtrl.control, target=joint3 )
     limbEndCtrlGrp = common.insertGroup( node=limbEndCtrl.control )
 
-    cmds.pointConstraint( limbEndCtrl.control, ikHandle )
 
     # entire system group
     systemGrp = cmds.group( empty=True, n=side+'_'+name+'_grp')
@@ -151,7 +136,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     cmds.setInfinity( joint3+'.translateX', poi='linear' )
 
     # create the twistSections
-    upTwistDict = twistSection.build( side=side, name='up_'+name, startPos=joint1, endPos=joint2, jointCount=twistJointCount, worldUpVector='z', worldUpObject=startNonRollStart, twistReader=startNonRollLoc )
+    upTwistDict  = twistSection.build( side=side, name='up_'+name, startPos=joint1, endPos=joint2, jointCount=twistJointCount, worldUpVector='z', worldUpObject=startNonRollStart, twistReader=startNonRollLoc )
     lowTwistDict = twistSection.build( side=side, name='lw_'+name, startPos=joint2, endPos=joint3, jointCount=twistJointCount, worldUpVector='z', worldUpObject=upNonRollStart, twistReader=lowNonRollLoc )
 
     # create the joints that will skin the twistSection curves
@@ -197,6 +182,13 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     cmds.addAttr( limbEndCtrl.control, ln='end_tangent', min=0, dv=0.5, k=True )
     cmds.connectAttr( limbEndCtrl.control+'.end_tangent', crvJntD2+'.translateX' )
 
+    # extra jnt follow orientation of endCtrl
+    cmds.orientConstraint( limbEndCtrl.control, joint3, mo=True )
+
+    # constrains entire limb to startCtrl
+    cmds.orientConstraint( limbStartCtrl.control, startNonRollGrp, mo=True )
+    cmds.parentConstraint( limbStartCtrl.control, systemGrp, mo=True )
+
     # skin the twistSection curves to these joints
     skinClsUp  = cmds.skinCluster( crvJntA1, crvJntA2, crvJntB1, crvJntB2, upTwistDict['twist_curve'] )[0]
     cmds.skinPercent( skinClsUp, upTwistDict['twist_curve']+'.cv[0]', transformValue=[(crvJntA1, 1)])
@@ -210,16 +202,29 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     cmds.skinPercent( skinClsLow, lowTwistDict['twist_curve']+'.cv[2]', transformValue=[(crvJntD2, 1)])
     cmds.skinPercent( skinClsLow, lowTwistDict['twist_curve']+'.cv[3]', transformValue=[(crvJntD1, 1)])
 
-    # extra jnt follow orientation of endCtrl
-    cmds.orientConstraint( limbEndCtrl.control, joint3, mo=True )
+    #
+    # IKHANDLE CREATION
+    #
+    ikHandle, effector = cmds.ikHandle( startJoint=joint1, endEffector=joint3, solver='ikRPsolver', n=side+'_'+name+'_ikHandle' )
 
+    pvCtrl   = controls.Control( side=side, rigPart=name, function='poleVec', nodeType="ctrl", size=1, color="green", aimAxis="twistAxis" )
+    pvCtrl.cubeCtrl()
+
+    # snaps the poleVector control to the middle joint
+    common.align( node=pvCtrl.control, target=joint2, orient=False )
+    pvCtrlGrp = common.insertGroup( node=pvCtrl.control )
+    cmds.poleVectorConstraint( pvCtrl.control, ikHandle )
+
+    # use this if polevector is not behind, maybe in the legs?
+    #cmds.setAttr( pvCtrlGrp+'.tz', 5 )
+    cmds.setAttr( pvCtrlGrp+'.tz', -5 )
+
+    # ikHandle follow endCtrl
+    cmds.pointConstraint( limbEndCtrl.control, ikHandle )
+    
     # extra attributes to endCtrl
     cmds.addAttr( limbEndCtrl.control, ln='twist', k=True )
     cmds.connectAttr( limbEndCtrl.control+'.twist', ikHandle+'.twist' )
-
-    # constrains entire limb to startCtrl
-    cmds.orientConstraint( limbStartCtrl.control, startNonRollGrp, mo=True )
-    cmds.parentConstraint( limbStartCtrl.control, systemGrp, mo=True )
 
     #
     # CLEAN UP
@@ -248,8 +253,8 @@ def test():
     cmds.select( clear=True )
     # arm
     mel.eval('joint -p 0 0 0; joint -p 5 0 -1; joint -e -zso -oj xyz -sao yup joint1; joint -p 9 0 0; joint -e -zso -oj xyz -sao yup joint2; joint -p 11 0 0; joint -e -zso -oj xyz -sao yup joint3;')
-    # leg
+    
+    # leg - (WIP !)
     #mel.eval('joint -p 0 6 0 ; joint -p 0 3 1; joint -e -zso -oj xyz -sao yup joint1; joint -p 0 0 0; joint -e -zso -oj xyz -sao yup joint2; joint -p 0 -1 2; joint -e -zso -oj xyz -sao yup joint3;')
-
 
     build( startJoint='joint1', middleJoint='joint2', endJoint='joint3', extraJoint='joint4', side='lf', name='arm', twistJointCount=6 )

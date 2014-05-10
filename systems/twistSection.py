@@ -57,7 +57,8 @@ def build( side=None, name=None, startPos=None, endPos=None, jointCount=None, wo
         cmds.setAttr( mpNode+'.worldUpVector', *axisDict[worldUpVector] )
         cmds.setAttr( mpNode+'.frontAxis', 0 ) # x
         cmds.setAttr( mpNode+'.upAxis', 2 )    # z
-        #cmds.setAttr( mpNode+'.inverseFront', 1 )
+        #if side == 'rt':
+        #    cmds.setAttr( mpNode+'.inverseFront', 1 )
         
         cmds.connectAttr( worldUpObject+'.worldMatrix[0]', mpNode+'.worldUpMatrix' )
 
