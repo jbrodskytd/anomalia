@@ -13,7 +13,7 @@ def build( side = None, jntFoot = None, ctrlFoot = None, mesh = None ):
 	returns a dictionary containing corresponding objects for these keys: 
 	joints, pivots, ikHandles, lattice, ctrls
 	 
-	to do: lattice ground contact setup
+	to do: lattice ground contacts
 	'''
 	
 	
@@ -60,8 +60,8 @@ def build( side = None, jntFoot = None, ctrlFoot = None, mesh = None ):
 	# create ctrl
 	ctrlFoot = controls.Control( side = side, rigPart = "foot", function = "ik", nodeType = "ctrl", size = .65, color = "yellow", aimAxis = "x" )
 	ctrlFoot.cubeCtrl()
-	footGrp = common.insertGroup( ctrlFoot.control )
-	common.align( footGrp, jntFoot, translate = True, orient = False )
+	ctrlGrpFoot = common.insertGroup( ctrlFoot.control )
+	common.align( ctrlGrpFoot, jntFoot, translate = True, orient = False )
 	outDict['ctrl'] = ctrlFoot.control
 	
 	
@@ -186,8 +186,30 @@ def build( side = None, jntFoot = None, ctrlFoot = None, mesh = None ):
 	ffd = cmds.rename( ffd, common.getName( node=ffd, side=side, rigPart='foot', function='contact', nodeType='ffd') )
 	ffdLattice = cmds.rename( ffdLattice, common.getName( node=ffdLattice, side=side, rigPart='foot', function='contact', nodeType='ffdlattice') )
 	ffdBase = cmds.rename( ffdBase, common.getName( node=ffdBase, side=side, rigPart='foot', function='contact', nodeType='ffdbase') )	
+	
+	cmds.select( clear = True )
+	jntLatticeTop = cmds.joint() 
+	jntLatticeTop = cmds.rename( jntLatticeTop, common.getName( node=jntLatticeTop, side=side, rigPart='foot', function='lattice_top', nodeType='jnt') )
+	cmds.xform( jntLatticeTop, ws = True, t = cmds.xform( ffdLattice + '.pt[1][2][1]', q = True, ws = True , t = True) )
+
+	jntLatticeMid = cmds.joint() 
+	jntLatticeMid = cmds.rename( jntLatticeMid, common.getName( node=jntLatticeMid, side=side, rigPart='foot', function='lattice_mid', nodeType='jnt') )
+	cmds.xform( jntLatticeMid, ws = True, t = cmds.xform( ffdLattice + '.pt[1][0][1]', q = True, ws = True , t = True) )	
+
+	jntLatticeBot = cmds.joint() 
+	jntLatticeBot = cmds.rename( jntLatticeBot, common.getName( node=jntLatticeBot, side=side, rigPart='foot', function='lattice_bot', nodeType='jnt') )
+	cmds.xform( jntLatticeBot, ws = True, t = cmds.xform( ffdLattice + '.pt[1][0][1]', q = True, ws = True , t = True) )	
+
 	cmds.connectAttr( ctrlFoot.control + '.squashGroundContact', ffd + '.envelope' )
 	cmds.addAttr( ctrlFoot.control + '.squashGroundContact', edit = True, max = 1.00, min = 0.00 )
+	cmds.setAttr( ctrlFoot.control + '.squashGroundContact', 1.0 )
+	cmds.select( clear = True )
+	
+	
+	cmds.parent( ffdLattice, ffdBase, ctrlFoot.control )
+	
+	clusterName = cmds.skinCluster( jntLatticeTop, jntLatticeMid, jntLatticeBot, ffdLattice ,tsb=True, skinMethod = 0, nw = 1)
+	
 	
 	outDict['lattice'] = ffd, ffdLattice, ffdBase
 	
@@ -202,16 +224,15 @@ def build( side = None, jntFoot = None, ctrlFoot = None, mesh = None ):
 	cmds.setAttr( ctrlGround.control + '.scaleZ', lock = True, keyable = False, channelBox = False )
 	cmds.setAttr( ctrlGround.control + '.visibility', keyable = False, channelBox = False )
 	cmds.xform( ctrlGround.control, ws = True, t = cmds.xform( ffdLattice + '.pt[1][0][1]', q = True, ws = True , t = True) )
-	cmds.parent( ctrlGround.control, ctrlFoot.control )
-	common.insertGroup( ctrlGround.control )
-	
+	ctrlGrpGround = common.insertGroup( ctrlGround.control )
+	cmds.parent( ctrlGrpGround, ctrlFoot.control )
 	
 	
 	####remove this
 	ikHandleLeg, ikEffectorLeg = cmds.ikHandle( startJoint = side + '_upLeg_def_jnt', endEffector = side + '_foot_def_jnt', solver = 'ikRPsolver', name = side + '_ikHandle_leg')
 	cmds.parent( ikHandleLeg, pivotFront )
 	cmds.parent( pivotRight, ctrlFoot.control )
-	cmds.parent( ffdLattice, ffdBase, ctrlFoot.control )
+	
 	
 	cmds.select( ctrlFoot.control )
 	return outDict
