@@ -1,12 +1,27 @@
 import maya.cmds as cmds
+import anomalia.core.common as cmn
 
 def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl):
-    placer = cmds.spaceLocator(n="side_hip_auto_placer_cnstr_loc") #TODO: proper naming
+    if(leg_jnt1 == ''):
+        print "Please define leg_jnt1"
+        return
+    if(pelvis_ctrl == ''):
+        print "Please define pelvis_ctrl"
+        return
+    if(foot_ctrl == ''):
+        print "Please define foot_ctrl"
+        return
+    name = '%s_%s_%s_%s' % ( cmn.getSide(leg_jnt1), cmn.getRigPart(leg_jnt1), 'constraint', 'loc' )    
+#    name = '%s_%s_%s_%s' % ( cmn.getSide(leg_jnt1), cmn.getRigPart(leg_jnt1), cmn.getFunction(leg_jnt1), 'loc' )    
+    placer = cmds.spaceLocator(n=name) 
     cmds.parent(placer[0], pelvis_ctrl)
     cmds.setAttr(placer[0]+".translate",0,0,0)
-    hipCtrl = cmds.circle(r=.3, n="side_hip_ctrl") #TODO: naming, create proper control, positioning
-    hipNull = cmds.group(n="side_hip_null", em = True) #TODO: naming
-    hipGrp = cmds.group(n="side_hip_grp", em = True) #TODO: naming
+    name = '%s_%s_%s_%s' % ( cmn.getSide(leg_jnt1), 'hip', 'autoHip', 'ctrl' )    
+    hipCtrl = cmds.circle(r=.3, n=name) #TODO: create proper controller, positioning
+    name = '%s_%s_%s_%s' % ( cmn.getSide(leg_jnt1), 'hip', 'autoHip', 'null' )
+    hipNull = cmds.group(n=name, em = True)
+    name = '%s_%s_%s_%s' % ( cmn.getSide(leg_jnt1), 'hip', 'autoHip', 'grp' )
+    hipGrp = cmds.group(n=name, em = True)
     print hipGrp
     print hipNull
     cmds.parent(hipCtrl, hipNull)
@@ -56,5 +71,4 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl):
     
     
 def test():
-    createAutoHip("L_leg_skin_jnt_autohip", "cn_spine1_jnt", "L_foot_CTRL_autohip")
-
+    createAutoHip("lf_leg_skin_jnt", "cn_cog_fk_ctrl", "lf_foot_ik_ctrl")
