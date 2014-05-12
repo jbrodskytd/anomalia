@@ -1,8 +1,11 @@
-#ToDo: fk rotations are mirrored to grab controls on both arms and pose them together / will have negative translate values along the twisting axis on one side
-#(OK)  stretch rig 
-#(OK)  skin / bendy attrs
-#      leg limb adjustments
+#FIX:
+#      leg limbs are flipping a lot
+#      right side tangent attributes are inverted!
+#ToDo:
 #      manual stretch attribute
+#      find ideal poleVector position so the chain doesn't move on constraint creation
+#      label skin joints
+#      FK setup ( fk rotations are mirrored to grab controls on both arms and pose them together / will have negative translate values along the twisting axis on one side )
 
 from maya import mel, cmds
 from anomalia.systems import twistSection
@@ -10,7 +13,7 @@ from anomalia.core import common, controls
 from anomalia.core.utils import showDialog
 
 
-def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, side=None, name=None, twistJointCount=None ):
+def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, side=None, name=None, twistJointCount=None, isLeg=False ):
     if not startJoint or not middleJoint or not endJoint or not extraJoint or not side or not name or not twistJointCount:
         print 'limb: Error! Must supply all arguments.'
         return
@@ -56,52 +59,60 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     #
 
     # twist extraction for shoulder/hips
-    startNonRollStart = cmds.createNode( 'joint', n=side+'_start_'+name+'_nonRoll' )
-    startNonRollEnd   = cmds.createNode( 'joint', n=side+'_start_'+name+'_nonRoll_end' )
-    startNonRollLoc   = cmds.spaceLocator( n=startNonRollStart+'_info' )[0]
+    startNonRollStart  = cmds.createNode( 'joint', n=side+'_start_'+name+'_nonRoll' )
+    startNonRollEnd    = cmds.createNode( 'joint', n=side+'_start_'+name+'_nonRoll_end' )
+    startNonRollLoc    = cmds.spaceLocator( n=startNonRollStart+'_info' )[0]
+    startNonRollLocGrp = common.insertGroup( node=startNonRollLoc )
     common.align( node=startNonRollStart, target=joint1 )
     common.align( node=startNonRollEnd, target=joint2 )
-    common.align( node=startNonRollLoc, target=joint1, orient=False )
+    common.align( node=startNonRollLocGrp, target=joint1 )
     cmds.parent( startNonRollEnd, startNonRollStart )
-    cmds.parent( startNonRollLoc, startNonRollStart )
+    cmds.parent( startNonRollLocGrp, startNonRollStart )
     startTwistIkHandle, startTwistEffector = cmds.ikHandle( startJoint=startNonRollStart, endEffector=startNonRollEnd, solver='ikRPsolver', n=side+'_start_'+name+'_nonRoll_ikHandle' )
     cmds.setAttr( startTwistIkHandle+'.poleVector', 0,0,0 )
     startNonRollGrp   = cmds.group( startNonRollStart, n=startNonRollStart+'_grp' )
     cmds.parent( startTwistIkHandle, joint1 )
     cmds.parent( startNonRollGrp, systemGrp )
-    cmds.aimConstraint( startNonRollEnd, startNonRollLoc, aimVector=(1,0,0), upVector=(0,1,0), worldUpType='objectrotation', worldUpVector=(0,1,0), worldUpObject=joint1 )
+    aimVec = (1,0,0)
+    aimUp  = (0,1,0)
+    if side == 'rt':
+        aimVec = (-1,0,0)
+        aimUp  = (0,-1,0)
+    cmds.aimConstraint( startNonRollEnd, startNonRollLoc, aimVector=aimVec, upVector=(0,1,0), worldUpType='objectrotation', worldUpVector=aimUp, worldUpObject=joint1 )
 
     # twist extraction for elbow/knee
-    upNonRollStart = cmds.createNode( 'joint', n=side+'_up_'+name+'_nonRoll' )
-    upNonRollEnd   = cmds.createNode( 'joint', n=side+'_up_'+name+'_nonRoll_end' )
-    upNonRollLoc   = cmds.spaceLocator( n=upNonRollStart+'_info' )[0]
+    upNonRollStart  = cmds.createNode( 'joint', n=side+'_up_'+name+'_nonRoll' )
+    upNonRollEnd    = cmds.createNode( 'joint', n=side+'_up_'+name+'_nonRoll_end' )
+    upNonRollLoc    = cmds.spaceLocator( n=upNonRollStart+'_info' )[0]
+    upNonRollLocGrp = common.insertGroup( node=upNonRollLoc )
     common.align( node=upNonRollStart, target=joint2 )
     common.align( node=upNonRollEnd, target=joint3 )
-    common.align( node=upNonRollLoc, target=joint2, orient=False )
+    common.align( node=upNonRollLocGrp, target=joint2 )
     cmds.parent( upNonRollEnd, upNonRollStart )
-    cmds.parent( upNonRollLoc, upNonRollStart )
+    cmds.parent( upNonRollLocGrp, upNonRollStart )
     upTwistIkHandle, upTwistEffector = cmds.ikHandle( startJoint=upNonRollStart, endEffector=upNonRollEnd, solver='ikRPsolver', n=side+'_up_'+name+'_nonRoll_ikHandle' )
     cmds.setAttr( upTwistIkHandle+'.poleVector', 0,0,0 )
     upNonRollGrp   = cmds.group( upNonRollStart, n=upNonRollStart+'_grp' )
     cmds.parent( upTwistIkHandle, joint2 )
     cmds.parent( upNonRollGrp, joint1 )
-    cmds.aimConstraint( upNonRollEnd, upNonRollLoc, aimVector=(1,0,0), upVector=(0,1,0), worldUpType='objectrotation', worldUpVector=(0,1,0), worldUpObject=joint2 )
+    cmds.aimConstraint( upNonRollEnd, upNonRollLoc, aimVector=aimVec, upVector=(0,1,0), worldUpType='objectrotation', worldUpVector=aimUp, worldUpObject=joint2 )
 
     # twist extraction for wrist/foot
-    lowNonRollStart = cmds.createNode( 'joint', n=side+'_low_'+name+'_nonRoll' )
-    lowNonRollEnd   = cmds.createNode( 'joint', n=side+'_low_'+name+'_nonRoll_end' )
-    lowNonRollLoc   = cmds.spaceLocator( n=lowNonRollStart+'_info' )[0]
+    lowNonRollStart  = cmds.createNode( 'joint', n=side+'_low_'+name+'_nonRoll' )
+    lowNonRollEnd    = cmds.createNode( 'joint', n=side+'_low_'+name+'_nonRoll_end' )
+    lowNonRollLoc    = cmds.spaceLocator( n=lowNonRollStart+'_info' )[0]
+    lowNonRollLocGrp = common.insertGroup( node=lowNonRollLoc )
     common.align( node=lowNonRollStart, target=joint3 )
     common.align( node=lowNonRollEnd, target=joint4 )
-    common.align( node=lowNonRollLoc, target=joint3, orient=False )
+    common.align( node=lowNonRollLocGrp, target=joint3 )
     cmds.parent( lowNonRollEnd, lowNonRollStart )
-    cmds.parent( lowNonRollLoc, lowNonRollStart )
+    cmds.parent( lowNonRollLocGrp, lowNonRollStart )
     lowTwistIkHandle, lowTwistEffector = cmds.ikHandle( startJoint=lowNonRollStart, endEffector=lowNonRollEnd, solver='ikRPsolver', n=side+'_low_'+name+'_nonRoll_ikHandle' )
     cmds.setAttr( lowTwistIkHandle+'.poleVector', 0,0,0 )
     lowNonRollGrp   = cmds.group( lowNonRollStart, n=lowNonRollStart+'_grp' )
     cmds.parent( lowTwistIkHandle, joint3 )
     cmds.parent( lowNonRollGrp, joint2 )
-    cmds.aimConstraint( lowNonRollEnd, lowNonRollLoc, aimVector=(1,0,0), upVector=(0,1,0), worldUpType='objectrotation', worldUpVector=(0,1,0), worldUpObject=joint3 )
+    cmds.aimConstraint( lowNonRollEnd, lowNonRollLoc, aimVector=aimVec, upVector=(0,1,0), worldUpType='objectrotation', worldUpVector=aimUp, worldUpObject=joint3 )
 
     # create stretch setup
     ssStartPos = cmds.group( empty=True, n=side+'_'+name+'_stretchStart_loc')
@@ -136,8 +147,10 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     cmds.setInfinity( joint3+'.translateX', poi='linear' )
 
     # create the twistSections
-    upTwistDict  = twistSection.build( side=side, name='up_'+name, startPos=joint1, endPos=joint2, jointCount=twistJointCount, worldUpVector='z', worldUpObject=startNonRollStart, twistReader=startNonRollLoc )
-    lowTwistDict = twistSection.build( side=side, name='lw_'+name, startPos=joint2, endPos=joint3, jointCount=twistJointCount, worldUpVector='z', worldUpObject=upNonRollStart, twistReader=lowNonRollLoc )
+    twistUp = 'z'
+    if isLeg: twistUp = 'y'
+    upTwistDict  = twistSection.build( side=side, name='up_'+name, startPos=joint1, endPos=joint2, jointCount=twistJointCount, worldUpVector=twistUp, worldUpObject=startNonRollStart, twistReader=startNonRollLoc )
+    lowTwistDict = twistSection.build( side=side, name='low_'+name, startPos=joint2, endPos=joint3, jointCount=twistJointCount, worldUpVector=twistUp, worldUpObject=upNonRollStart, twistReader=lowNonRollLoc )
 
     # create the joints that will skin the twistSection curves
     # to get that nice bendy effect for free
@@ -215,10 +228,11 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     pvCtrlGrp = common.insertGroup( node=pvCtrl.control )
     cmds.poleVectorConstraint( pvCtrl.control, ikHandle )
 
-    # use this if polevector is not behind, maybe in the legs?
-    #cmds.setAttr( pvCtrlGrp+'.tz', 5 )
     cmds.setAttr( pvCtrlGrp+'.tz', -5 )
-
+    # invert poleVector position if it's a leg
+    if isLeg:
+        cmds.setAttr( pvCtrlGrp+'.tz', 5 )
+    
     # ikHandle follow endCtrl
     cmds.pointConstraint( limbEndCtrl.control, ikHandle )
     
@@ -253,8 +267,10 @@ def test():
     cmds.select( clear=True )
     # arm
     mel.eval('joint -p 0 0 0; joint -p 5 0 -1; joint -e -zso -oj xyz -sao yup joint1; joint -p 9 0 0; joint -e -zso -oj xyz -sao yup joint2; joint -p 11 0 0; joint -e -zso -oj xyz -sao yup joint3;')
-    
-    # leg - (WIP !)
-    #mel.eval('joint -p 0 6 0 ; joint -p 0 3 1; joint -e -zso -oj xyz -sao yup joint1; joint -p 0 0 0; joint -e -zso -oj xyz -sao yup joint2; joint -p 0 -1 2; joint -e -zso -oj xyz -sao yup joint3;')
-
     build( startJoint='joint1', middleJoint='joint2', endJoint='joint3', extraJoint='joint4', side='lf', name='arm', twistJointCount=6 )
+
+    cmds.select( clear=True )
+    # leg
+    mel.eval('joint -p 0 6 0 ; joint -p 0 3 1; joint -e -zso -oj xyz -sao yup joint6; joint -p 0 0 0; joint -e -zso -oj xyz -sao yup joint7; joint -p 0 -1 2; joint -e -zso -oj xyz -sao yup joint8;')
+    build( startJoint='joint5', middleJoint='joint6', endJoint='joint7', extraJoint='joint8', side='lf', name='leg', twistJointCount=6, isLeg=True )
+    
