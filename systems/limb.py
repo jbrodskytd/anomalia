@@ -1,9 +1,6 @@
-#FIX:
-#      leg limbs are flipping a lot
-#      right side tangent attributes are inverted!
 #ToDo:
 #      manual stretch attribute
-#      find ideal poleVector position so the chain doesn't move on constraint creation
+#      find ideal poleVector position (wont be used)
 #      label skin joints
 #      FK setup ( fk rotations are mirrored to grab controls on both arms and pose them together / will have negative translate values along the twisting axis on one side )
 
@@ -66,6 +63,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     common.align( node=startNonRollStart, target=joint1 )
     common.align( node=startNonRollEnd, target=joint2 )
     common.align( node=startNonRollLocGrp, target=joint1 )
+
     cmds.parent( startNonRollEnd, startNonRollStart )
     cmds.parent( startNonRollLocGrp, startNonRollStart )
     startTwistIkHandle, startTwistEffector = cmds.ikHandle( startJoint=startNonRollStart, endEffector=startNonRollEnd, solver='ikRPsolver', n=side+'_start_'+name+'_nonRoll_ikHandle' )
@@ -73,12 +71,18 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     startNonRollGrp   = cmds.group( startNonRollStart, n=startNonRollStart+'_grp' )
     cmds.parent( startTwistIkHandle, joint1 )
     cmds.parent( startNonRollGrp, systemGrp )
-    aimVec = (1,0,0)
-    aimUp  = (0,1,0)
+
+    aimVec     = (1,0,0)
+    aimWorldUp = (0,1,0)
+    if isLeg:
+        aimUp  = (0,0,1)
+    else:
+        aimUp  = (0,1,0)
+
     if side == 'rt':
         aimVec = (-1,0,0)
-        aimUp  = (0,-1,0)
-    cmds.aimConstraint( startNonRollEnd, startNonRollLoc, aimVector=aimVec, upVector=(0,1,0), worldUpType='objectrotation', worldUpVector=aimUp, worldUpObject=joint1 )
+        aimWorldUp  = (0,-1,0)
+    cmds.aimConstraint( startNonRollEnd, startNonRollLoc, aimVector=aimVec, upVector=aimUp, worldUpType='objectrotation', worldUpVector=aimWorldUp, worldUpObject=joint1 )
 
     # twist extraction for elbow/knee
     upNonRollStart  = cmds.createNode( 'joint', n=side+'_up_'+name+'_nonRoll' )
@@ -95,7 +99,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     upNonRollGrp   = cmds.group( upNonRollStart, n=upNonRollStart+'_grp' )
     cmds.parent( upTwistIkHandle, joint2 )
     cmds.parent( upNonRollGrp, joint1 )
-    cmds.aimConstraint( upNonRollEnd, upNonRollLoc, aimVector=aimVec, upVector=(0,1,0), worldUpType='objectrotation', worldUpVector=aimUp, worldUpObject=joint2 )
+    cmds.aimConstraint( upNonRollEnd, upNonRollLoc, aimVector=aimVec, upVector=aimUp, worldUpType='objectrotation', worldUpVector=aimWorldUp, worldUpObject=joint2 )
 
     # twist extraction for wrist/foot
     lowNonRollStart  = cmds.createNode( 'joint', n=side+'_low_'+name+'_nonRoll' )
@@ -104,7 +108,8 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     lowNonRollLocGrp = common.insertGroup( node=lowNonRollLoc )
     common.align( node=lowNonRollStart, target=joint3 )
     common.align( node=lowNonRollEnd, target=joint4 )
-    common.align( node=lowNonRollLocGrp, target=joint3 )
+    common.align( node=lowNonRollLocGrp, target=joint2 )
+    common.align( node=lowNonRollLocGrp, target=joint3, orient=False )
     cmds.parent( lowNonRollEnd, lowNonRollStart )
     cmds.parent( lowNonRollLocGrp, lowNonRollStart )
     lowTwistIkHandle, lowTwistEffector = cmds.ikHandle( startJoint=lowNonRollStart, endEffector=lowNonRollEnd, solver='ikRPsolver', n=side+'_low_'+name+'_nonRoll_ikHandle' )
@@ -112,7 +117,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     lowNonRollGrp   = cmds.group( lowNonRollStart, n=lowNonRollStart+'_grp' )
     cmds.parent( lowTwistIkHandle, joint3 )
     cmds.parent( lowNonRollGrp, joint2 )
-    cmds.aimConstraint( lowNonRollEnd, lowNonRollLoc, aimVector=aimVec, upVector=(0,1,0), worldUpType='objectrotation', worldUpVector=aimUp, worldUpObject=joint3 )
+    cmds.aimConstraint( lowNonRollEnd, lowNonRollLoc, aimVector=aimVec, upVector=aimUp, worldUpType='objectrotation', worldUpVector=aimWorldUp, worldUpObject=joint3 )
 
     # create stretch setup
     ssStartPos = cmds.group( empty=True, n=side+'_'+name+'_stretchStart_loc')
@@ -149,18 +154,28 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     # create the twistSections
     twistUp = 'z'
     if isLeg: twistUp = 'y'
-    upTwistDict  = twistSection.build( side=side, name='up_'+name, startPos=joint1, endPos=joint2, jointCount=twistJointCount, worldUpVector=twistUp, worldUpObject=startNonRollStart, twistReader=startNonRollLoc )
-    lowTwistDict = twistSection.build( side=side, name='low_'+name, startPos=joint2, endPos=joint3, jointCount=twistJointCount, worldUpVector=twistUp, worldUpObject=upNonRollStart, twistReader=lowNonRollLoc )
+    doNotInvertUp = False
+    if isLeg and side == 'ry': doNotInvertUp = True
+    upTwistDict  = twistSection.build( side=side, name='up_'+name, startPos=joint1, endPos=joint2, jointCount=twistJointCount, worldUpVector=twistUp, worldUpObject=startNonRollStart, twistReader=startNonRollLoc, doNotInvertUp=doNotInvertUp )
+    lowTwistDict = twistSection.build( side=side, name='low_'+name, startPos=joint2, endPos=joint3, jointCount=twistJointCount, worldUpVector=twistUp, worldUpObject=upNonRollStart, twistReader=lowNonRollLoc, doNotInvertUp=doNotInvertUp )
 
     # create the joints that will skin the twistSection curves
     # to get that nice bendy effect for free
     # start with the shoulder/hips joint
+    mdNode   = None
     crvJntA1 = cmds.createNode( 'joint', n=side+'_'+name+'_up_curve_1_jnt')
     crvJntA2 = cmds.createNode( 'joint', n=side+'_'+name+'_up_curve_2_jnt')
     cmds.parent( crvJntA2, crvJntA1 )
     cmds.parent( crvJntA1, systemGrp )
     cmds.addAttr( limbEndCtrl.control, ln='start_tangent', min=0, dv=0.1, k=True )
-    cmds.connectAttr( limbEndCtrl.control+'.start_tangent', crvJntA2+'.translateX' )
+    if side == 'lf':
+        cmds.connectAttr( limbEndCtrl.control+'.start_tangent', crvJntA2+'.translateX' )
+    else:
+        mdNode = cmds.createNode( 'multiplyDivide', n=side+'_'+name+'_pma' )
+        cmds.setAttr( mdNode+'.input2', -1, -1, -1 )
+        cmds.connectAttr( limbEndCtrl.control+'.start_tangent', mdNode+'.input1X' )
+        cmds.connectAttr( mdNode+'.outputX', crvJntA2+'.translateX' )
+
     common.align( node=crvJntA1, target=joint1 )
 
     # elbow/knee joints
@@ -177,8 +192,13 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     cmds.parent( crvJntC2, crvJntC1 )
     cmds.parent( crvJntC1, avgGrp )
     cmds.addAttr( limbEndCtrl.control, ln='bend_tangent', min=0, dv=0.85, k=True )
-    cmds.connectAttr( limbEndCtrl.control+'.bend_tangent', crvJntB2+'.translateX' )
-    cmds.connectAttr( limbEndCtrl.control+'.bend_tangent', crvJntC2+'.translateX' )
+    if mdNode:
+        cmds.connectAttr( limbEndCtrl.control+'.bend_tangent', mdNode+'.input1Y' )
+        cmds.connectAttr( mdNode+'.outputY', crvJntB2+'.translateX' )
+        cmds.connectAttr( mdNode+'.outputY', crvJntC2+'.translateX' )
+    else:
+        cmds.connectAttr( limbEndCtrl.control+'.bend_tangent', crvJntB2+'.translateX' )
+        cmds.connectAttr( limbEndCtrl.control+'.bend_tangent', crvJntC2+'.translateX' )
 
     cmds.pointConstraint( joint2, avgGrp )
     cons     = cmds.orientConstraint( joint1, joint2, avgGrp )[0]
@@ -193,7 +213,11 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     cmds.setAttr( crvJntD1+'.rotateY', 180 ) # flip
     cmds.parentConstraint( limbEndCtrl.control, crvJntD1Grp )
     cmds.addAttr( limbEndCtrl.control, ln='end_tangent', min=0, dv=0.5, k=True )
-    cmds.connectAttr( limbEndCtrl.control+'.end_tangent', crvJntD2+'.translateX' )
+    if mdNode:
+        cmds.connectAttr( limbEndCtrl.control+'.end_tangent', mdNode+'.input1Z' )
+        cmds.connectAttr( mdNode+'.outputZ', crvJntD2+'.translateX' )
+    else:
+        cmds.connectAttr( limbEndCtrl.control+'.end_tangent', crvJntD2+'.translateX' )
 
     # extra jnt follow orientation of endCtrl
     cmds.orientConstraint( limbEndCtrl.control, joint3, mo=True )
@@ -265,12 +289,15 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
 
 def test():
     cmds.select( clear=True )
-    # arm
-    mel.eval('joint -p 0 0 0; joint -p 5 0 -1; joint -e -zso -oj xyz -sao yup joint1; joint -p 9 0 0; joint -e -zso -oj xyz -sao yup joint2; joint -p 11 0 0; joint -e -zso -oj xyz -sao yup joint3;')
-    build( startJoint='joint1', middleJoint='joint2', endJoint='joint3', extraJoint='joint4', side='lf', name='arm', twistJointCount=6 )
+    # arms
+    mel.eval('joint -p 1 0 0 -n lf_arm1; joint -p 6 0 -0.1 -n lf_arm2; joint -e -zso -oj xyz -sao yup lf_arm1; joint -p 10 0 0 -n lf_arm3; joint -e -zso -oj xyz -sao yup lf_arm2; joint -p 12 0 0 -n lf_arm4; joint -e -zso -oj xyz -sao yup lf_arm3;')
+    build( startJoint='lf_arm1', middleJoint='lf_arm2', endJoint='lf_arm3', extraJoint='lf_arm4', side='lf', name='arm', twistJointCount=6 )
+    mel.eval('mirrorJoint -mirrorYZ -mirrorBehavior -searchReplace "lf_" "rt_" lf_arm1;')
+    build( startJoint='rt_arm1', middleJoint='rt_arm2', endJoint='rt_arm3', extraJoint='rt_arm4', side='rt', name='arm', twistJointCount=6 )
 
     cmds.select( clear=True )
     # leg
-    mel.eval('joint -p 0 6 0 ; joint -p 0 3 1; joint -e -zso -oj xyz -sao yup joint6; joint -p 0 0 0; joint -e -zso -oj xyz -sao yup joint7; joint -p 0 -1 2; joint -e -zso -oj xyz -sao yup joint8;')
-    build( startJoint='joint5', middleJoint='joint6', endJoint='joint7', extraJoint='joint8', side='lf', name='leg', twistJointCount=6, isLeg=True )
-    
+    mel.eval('joint -p 1 6 0 -n lf_leg1; joint -p 1 3 0.1 -n lf_leg2; joint -p 1 0 0 -n lf_leg3; joint -p 1 -1 0 -n lf_leg4; joint -e -zso -oj xyz -sao yup lf_leg1; joint -e -zso -oj xyz -sao ydown lf_leg2; joint -e -oj xyz -sao yup -zso lf_leg3;')
+    build( startJoint='lf_leg1', middleJoint='lf_leg2', endJoint='lf_leg3', extraJoint='lf_leg4', side='lf', name='leg', twistJointCount=6, isLeg=True )
+    mel.eval('mirrorJoint -mirrorYZ -mirrorBehavior -searchReplace "lf_" "rt_" lf_leg1;')
+    build( startJoint='rt_leg1', middleJoint='rt_leg2', endJoint='rt_leg3', extraJoint='rt_leg4', side='rt', name='leg', twistJointCount=6, isLeg=True )

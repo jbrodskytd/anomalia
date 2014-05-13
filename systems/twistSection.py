@@ -1,7 +1,7 @@
 from maya import mel, cmds
 from anomalia.core.common import pointsAlongVector
 
-def build( side=None, name=None, startPos=None, endPos=None, jointCount=None, worldUpVector=None, worldUpObject=None, twistReader=None ):
+def build( side=None, name=None, startPos=None, endPos=None, jointCount=None, worldUpVector=None, worldUpObject=None, twistReader=None, doNotInvertUp=False ):
     '''
     Creates a simple motionPath spline rig
     
@@ -14,6 +14,7 @@ def build( side=None, name=None, startPos=None, endPos=None, jointCount=None, wo
       worldUpVector (string : ['x', 'y', 'z'])
       worldUpObject (string : name of a transform)
       twistReader   (string : name of a transform)
+      doNotInvertUp (bool   : internal usage, helper to orient limbs modules )
 
     << Outputs:
         A Dictionary with:
@@ -61,7 +62,8 @@ def build( side=None, name=None, startPos=None, endPos=None, jointCount=None, wo
         elif worldUpVector == 'z': cmds.setAttr( mpNode+'.upAxis', 2 )
         if side == 'rt':
             cmds.setAttr( mpNode+'.inverseFront', 1 )
-            cmds.setAttr( mpNode+'.inverseUp', 1 )
+            if not doNotInvertUp:
+                cmds.setAttr( mpNode+'.inverseUp', 1 )
         
         cmds.connectAttr( worldUpObject+'.worldMatrix[0]', mpNode+'.worldUpMatrix' )
 
