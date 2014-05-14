@@ -67,10 +67,13 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     cmds.parent( startNonRollEnd, startNonRollStart )
     cmds.parent( startNonRollLocGrp, startNonRollStart )
     startTwistIkHandle, startTwistEffector = cmds.ikHandle( startJoint=startNonRollStart, endEffector=startNonRollEnd, solver='ikRPsolver', n=side+'_start_'+name+'_nonRoll_ikHandle' )
-    cmds.setAttr( startTwistIkHandle+'.poleVector', 0,0,0 )
+
     startNonRollGrp   = cmds.group( startNonRollStart, n=startNonRollStart+'_grp' )
     cmds.parent( startTwistIkHandle, joint1 )
     cmds.parent( startNonRollGrp, systemGrp )
+
+    cmds.setAttr( startTwistIkHandle+'.poleVector', 0, 0, 0 )
+
 
     aimVec     = (1,0,0)
     aimWorldUp = (0,1,0)
@@ -99,6 +102,11 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     upNonRollGrp   = cmds.group( upNonRollStart, n=upNonRollStart+'_grp' )
     cmds.parent( upTwistIkHandle, joint2 )
     cmds.parent( upNonRollGrp, joint1 )
+    cmds.setAttr( upTwistIkHandle+'.poleVector', 0, 0, 0 )
+    if isLeg:
+        if   side == 'lf': cmds.setAttr( upTwistIkHandle+'.poleVectorY', 1 )
+        elif side == 'rt': cmds.setAttr( upTwistIkHandle+'.poleVectorZ', 1 )
+
     cmds.aimConstraint( upNonRollEnd, upNonRollLoc, aimVector=aimVec, upVector=aimUp, worldUpType='objectrotation', worldUpVector=aimWorldUp, worldUpObject=joint2 )
 
     # twist extraction for wrist/foot
@@ -108,16 +116,29 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     lowNonRollLocGrp = common.insertGroup( node=lowNonRollLoc )
     common.align( node=lowNonRollStart, target=joint3 )
     common.align( node=lowNonRollEnd, target=joint4 )
-    common.align( node=lowNonRollLocGrp, target=joint2 )
-    common.align( node=lowNonRollLocGrp, target=joint3, orient=False )
+
     cmds.parent( lowNonRollEnd, lowNonRollStart )
     cmds.parent( lowNonRollLocGrp, lowNonRollStart )
+
     lowTwistIkHandle, lowTwistEffector = cmds.ikHandle( startJoint=lowNonRollStart, endEffector=lowNonRollEnd, solver='ikRPsolver', n=side+'_low_'+name+'_nonRoll_ikHandle' )
-    cmds.setAttr( lowTwistIkHandle+'.poleVector', 0,0,0 )
+    
     lowNonRollGrp   = cmds.group( lowNonRollStart, n=lowNonRollStart+'_grp' )
     cmds.parent( lowTwistIkHandle, joint3 )
     cmds.parent( lowNonRollGrp, joint2 )
+
+    if isLeg:
+        if   side == 'lf': aimUp  = (0,  1, 0)
+        elif side == 'rt': aimUp  = (0, -1, 0)
     cmds.aimConstraint( lowNonRollEnd, lowNonRollLoc, aimVector=aimVec, upVector=aimUp, worldUpType='objectrotation', worldUpVector=aimWorldUp, worldUpObject=joint3 )
+
+    if isLeg:
+        common.align( node=lowNonRollLocGrp, target=joint3 )
+    else:
+        common.align( node=lowNonRollLocGrp, target=joint2 )
+        common.align( node=lowNonRollLocGrp, target=joint3, orient=False )
+
+    cmds.setAttr( lowTwistIkHandle+'.poleVector', 0, 0, 0 )
+    if not isLeg and side == 'rt': cmds.setAttr( lowNonRollLocGrp+'.r', 0, 0, 0 )
 
     # create stretch setup
     ssStartPos = cmds.group( empty=True, n=side+'_'+name+'_stretchStart_loc')
