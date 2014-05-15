@@ -16,10 +16,10 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
         return
 
     # first reconstruct the joints for our system
-    joint1 = cmds.createNode( 'joint', n=side+'_start_'+name+'_drv' )
-    joint2 = cmds.createNode( 'joint', n=side+'_middle_'+name+'_drv' )
+    joint1 = cmds.createNode( 'joint', n=side+'_start_'+name+'_drvJnt' )
+    joint2 = cmds.createNode( 'joint', n=side+'_middle_'+name+'_drvJnt' )
     joint3 = cmds.createNode( 'joint', n=side+'_end_'+name+'_jnt' )
-    joint4 = cmds.createNode( 'joint', n=side+'_extra_'+name+'_drv' )
+    joint4 = cmds.createNode( 'joint', n=side+'_extra_'+name+'_drvJnt' )
     common.align( node=joint1, target=startJoint )
     common.align( node=joint2, target=middleJoint )
     common.align( node=joint3, target=endJoint )
@@ -27,6 +27,8 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     cmds.parent( joint4, joint3 )
     cmds.parent( joint3, joint2 )
     cmds.parent( joint2, joint1 )
+    if isLeg: cmds.setAttr( joint2+'.preferredAngle', 0, 0, -90 )
+    else:     cmds.setAttr( joint2+'.preferredAngle', 0, -90, 0 )
     cmds.makeIdentity( joint1, apply=True )
 
     # auto color controls using the 'side' argument
@@ -43,7 +45,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     # creation of the end control (hand or foot)
     limbEndCtrl = controls.Control( side=side, rigPart='limb', function=name+'_end', nodeType='ctrl', size=1, color=myColor, aimAxis='x' )
     limbEndCtrl.cubeCtrl()
-    common.align( node=limbEndCtrl.control, target=joint3 )
+    common.align( node=limbEndCtrl.control, target=joint3, orient=False )
     limbEndCtrlGrp = common.insertGroup( node=limbEndCtrl.control )
 
 
@@ -206,14 +208,14 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     # elbow/knee joints
     avgGrp   = cmds.group( empty=True, n=side+'_'+name+'_avg_grp' )
 
-    crvJntB1 = cmds.createNode( 'joint', n=side+'_'+name+'_cn_curve_1_jnt')
-    crvJntB2 = cmds.createNode( 'joint', n=side+'_'+name+'_cn_curve_2_jnt')
+    crvJntB1 = cmds.createNode( 'joint', n=side+'_'+name+'_cn_curve_1_avgJnt')
+    crvJntB2 = cmds.createNode( 'joint', n=side+'_'+name+'_cn_curve_2_avgJnt')
     cmds.parent( crvJntB2, crvJntB1 )
     cmds.parent( crvJntB1, avgGrp )
     cmds.setAttr( crvJntB1+'.rotateY', 180 ) # flip
 
-    crvJntC1 = cmds.createNode( 'joint', n=side+'_'+name+'_cn_curve_3_jnt')
-    crvJntC2 = cmds.createNode( 'joint', n=side+'_'+name+'_cn_curve_4_jnt')
+    crvJntC1 = cmds.createNode( 'joint', n=side+'_'+name+'_cn_curve_3_avgJnt')
+    crvJntC2 = cmds.createNode( 'joint', n=side+'_'+name+'_cn_curve_4_avgJnt')
     cmds.parent( crvJntC2, crvJntC1 )
     cmds.parent( crvJntC1, avgGrp )
     cmds.addAttr( limbEndCtrl.control, ln='bend_tangent', min=0, dv=0.85, k=True )
@@ -236,8 +238,9 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     cmds.parent( crvJntD2, crvJntD1 )
     cmds.parent( crvJntD1Grp, systemGrp )
     cmds.setAttr( crvJntD1+'.rotateY', 180 ) # flip
-    cmds.parentConstraint( limbEndCtrl.control, crvJntD1Grp )
-    cmds.addAttr( limbEndCtrl.control, ln='end_tangent', min=0, dv=0.5, k=True )
+    common.align( node=crvJntD1Grp, target=joint3 )
+    cmds.parentConstraint( limbEndCtrl.control, crvJntD1Grp, mo=True )
+    cmds.addAttr( limbEndCtrl.control, ln='end_tangent', min=0, dv=0.2, k=True )
     if mdNode:
         cmds.connectAttr( limbEndCtrl.control+'.end_tangent', mdNode+'.input1Z' )
         cmds.connectAttr( mdNode+'.outputZ', crvJntD2+'.translateX' )
@@ -291,7 +294,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     # extra attributes to endCtrl
     cmds.addAttr( limbEndCtrl.control, ln='twist', k=True )
     cmds.connectAttr( limbEndCtrl.control+'.twist', ikHandle+'.twist' )
-
+    return
     #
     # CLEAN UP
     #
