@@ -1,6 +1,6 @@
 import maya.cmds as cmds
 from anomalia.core import common, controls
-
+import collections
 from anomalia.core.utils import showDialog
 
 def build ( hips=None, chest=None, head=None, numSpineJoints=6, numHeadJoints=6, twistAxis='x', bendAxis='y', cleanUp=True ):
@@ -31,22 +31,12 @@ def build ( hips=None, chest=None, head=None, numSpineJoints=6, numHeadJoints=6,
     headLocs = common.pointsAlongVector( start = chest, end = head, divisions = numHeadJoints-1)
     spineLocs.extend(headLocs[1:])
     
-    # Build and align root groups
-    noXformGrp = cmds.group(empty=1)
-    noXformGrp = cmds.rename(noXformGrp, common.getName( node=noXformGrp, side='cn', rigPart='spine', function='noXform', nodeType='grp'))
-    common.align(node=noXformGrp, target=hips)
-    aimConst = cmds.aimConstraint(chest, noXformGrp, aimVector=axisDict[twistAxis], upVector=axisDict[bendAxis], worldUpVector=[1,0,0] )
-    cmds.delete( aimConst )
-    
-    # Scale reader node
-    scaleGrp = cmds.duplicate(noXformGrp)
-    scaleGrp = cmds.rename(scaleGrp, common.getName( node=scaleGrp, side='cn', rigPart='spine', function='scaleReader', nodeType='grp'))
-    
-    xformGrp = cmds.duplicate(noXformGrp)
+    xformGrp = cmds.group(empty=1)
     xformGrp = cmds.rename(xformGrp, common.getName( node=xformGrp, side='cn', rigPart='spine', function='xform', nodeType='grp'))
-    cmds.scaleConstraint( scaleGrp, xformGrp )
-    
-    cmds.parent( scaleGrp, noXformGrp )
+    common.align(node=xformGrp, target=hips)
+    aimConst = cmds.aimConstraint(chest, xformGrp, aimVector=axisDict[twistAxis], upVector=axisDict[bendAxis], worldUpVector=[1,0,0] )
+    cmds.delete( aimConst )
+
             
     # Build control objects
     hipCtrl = controls.Control( side = "cn", rigPart = "spine", function = "hips", nodeType = "ctrl", size = 1, color = "green", aimAxis = "twistAxis" )
@@ -241,11 +231,11 @@ def build ( hips=None, chest=None, head=None, numSpineJoints=6, numHeadJoints=6,
     # Point constrain head ctrl grp to last spine group
     pointConst = cmds.pointConstraint( spineGrps[-1], headGrp)
     # Add orient constraint to headCtrl group - weighted between root noXformGrp and last spine grp - weight controlled by isolation attr
-    orientConst = cmds.orientConstraint( noXformGrp, chestCtrl.control, headGrp)[0]
+    orientConst = cmds.orientConstraint( xformGrp, chestCtrl.control, headGrp)[0]
     isolateRev = cmds.createNode('reverse')
     isolateRev = cmds.rename(isolateRev, common.getName( node=isolateRev, side='cn', rigPart='spine', function='headIsolate', nodeType='rev'))
     cmds.connectAttr( '%s.isolate_rotation' % headCtrl.control, '%s.inputX' % isolateRev )
-    cmds.connectAttr( '%s.isolate_rotation' % headCtrl.control, '%s.%sW0' % (orientConst, noXformGrp), f=1 )
+    cmds.connectAttr( '%s.isolate_rotation' % headCtrl.control, '%s.%sW0' % (orientConst, xformGrp), f=1 )
     cmds.connectAttr( '%s.outputX' % isolateRev, '%s.%sW1' % (orientConst, chestCtrl.control), f=1 )
     cmds.setAttr( '%s.interpType' % orientConst, 2 )
     
@@ -255,9 +245,11 @@ def build ( hips=None, chest=None, head=None, numSpineJoints=6, numHeadJoints=6,
         common.attrCtrl(nodeList=[spineGrps[1]], attrList=['visibility'])
         common.attrCtrl(nodeList=[hipCtrl.control], attrList=['sx', 'sy', 'sz', 'visibility'])
         common.attrCtrl(nodeList=[chestCtrl.control, headCtrl.control], attrList=['tx', 'ty', 'tz', 'sx', 'sy', 'sz', 'visibility'])
-    
-    
         
+    returnDict = collections.defaultdict(list)
+    returnDict['xformGrp'].append( xformGrp )
+    
+    return returnDict
     
     
 def test():
