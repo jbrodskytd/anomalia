@@ -311,7 +311,8 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
                   'start_ctrl' : limbStartCtrl.control,
                   'end_ctrl'   : limbEndCtrl.control,
                   'skinJoints_group' : [ upTwistDict['joints_group'], lowTwistDict['joints_group'] ],
-                  'limbSystem_grp'   : systemGrp
+                  'limbSystem_grp'   : systemGrp,
+                  'stretch_positions': [ ssStartPos, ssEndPos ]
                 }
     return returnDic
 
