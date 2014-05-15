@@ -16,10 +16,10 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
         return
 
     # first reconstruct the joints for our system
-    joint1 = cmds.createNode( 'joint', n=side+'_start_'+name+'_jnt' )
-    joint2 = cmds.createNode( 'joint', n=side+'_middle_'+name+'_jnt' )
+    joint1 = cmds.createNode( 'joint', n=side+'_start_'+name+'_drv' )
+    joint2 = cmds.createNode( 'joint', n=side+'_middle_'+name+'_drv' )
     joint3 = cmds.createNode( 'joint', n=side+'_end_'+name+'_jnt' )
-    joint4 = cmds.createNode( 'joint', n=side+'_extra_'+name+'_jnt' )
+    joint4 = cmds.createNode( 'joint', n=side+'_extra_'+name+'_drv' )
     common.align( node=joint1, target=startJoint )
     common.align( node=joint2, target=middleJoint )
     common.align( node=joint3, target=endJoint )
@@ -71,7 +71,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     startNonRollGrp   = cmds.group( startNonRollStart, n=startNonRollStart+'_grp' )
     cmds.parent( startTwistIkHandle, joint1 )
     cmds.parent( startNonRollGrp, systemGrp )
-
+    cmds.setAttr( startNonRollGrp+'.v', 0 )
     cmds.setAttr( startTwistIkHandle+'.poleVector', 0, 0, 0 )
 
 
@@ -102,6 +102,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     upNonRollGrp   = cmds.group( upNonRollStart, n=upNonRollStart+'_grp' )
     cmds.parent( upTwistIkHandle, joint2 )
     cmds.parent( upNonRollGrp, joint1 )
+    cmds.setAttr( upNonRollGrp+'.v', 0 )
     cmds.setAttr( upTwistIkHandle+'.poleVector', 0, 0, 0 )
     if isLeg:
         if   side == 'lf': cmds.setAttr( upTwistIkHandle+'.poleVectorY', 1 )
@@ -119,7 +120,6 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
 
     cmds.parent( lowNonRollEnd, lowNonRollStart )
     cmds.parent( lowNonRollLocGrp, lowNonRollStart )
-
     lowTwistIkHandle, lowTwistEffector = cmds.ikHandle( startJoint=lowNonRollStart, endEffector=lowNonRollEnd, solver='ikRPsolver', n=side+'_low_'+name+'_nonRoll_ikHandle' )
     
     lowNonRollGrp   = cmds.group( lowNonRollStart, n=lowNonRollStart+'_grp' )
@@ -137,8 +137,12 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
         common.align( node=lowNonRollLocGrp, target=joint2 )
         common.align( node=lowNonRollLocGrp, target=joint3, orient=False )
 
+    cmds.setAttr( lowNonRollGrp+'.v', 0 )
     cmds.setAttr( lowTwistIkHandle+'.poleVector', 0, 0, 0 )
-    if not isLeg and side == 'rt': cmds.setAttr( lowNonRollLocGrp+'.r', 0, 0, 0 )
+    if not isLeg:
+        if side == 'rt': cmds.setAttr( lowNonRollLocGrp+'.r', 0, 0, 0 )
+    else:
+        if side == 'lf': cmds.setAttr( lowNonRollLocGrp+'.r', 90, 0, 0 )
 
     # create stretch setup
     ssStartPos = cmds.group( empty=True, n=side+'_'+name+'_stretchStart_loc')
@@ -273,11 +277,14 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     pvCtrlGrp = common.insertGroup( node=pvCtrl.control )
     cmds.poleVectorConstraint( pvCtrl.control, ikHandle )
 
-    cmds.setAttr( pvCtrlGrp+'.tz', -5 )
+    cmds.setAttr( pvCtrl.control+'.tz', -5 )
     # invert poleVector position if it's a leg
     if isLeg:
-        cmds.setAttr( pvCtrlGrp+'.tz', 5 )
-    
+        cmds.setAttr( pvCtrl.control+'.tz', 5 )
+        # auto follow foot control
+        cmds.pointConstraint(  limbEndCtrl.control, pvCtrlGrp, mo=True )
+        cmds.orientConstraint( limbEndCtrl.control, pvCtrlGrp, skip=['x'], mo=True )
+
     # ikHandle follow endCtrl
     cmds.pointConstraint( limbEndCtrl.control, ikHandle )
     
