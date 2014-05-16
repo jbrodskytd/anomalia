@@ -27,23 +27,13 @@ def build( root, fingerDict, side='rt', cleanUp=1 ):
         return showDialog( 'Argument Error', "fingerDict must be supplied as a dictionary/nwith a key for the name of each digit and a root node as its value/n e.g.{ 'thumb':'lf_thumb1_defJnt', 'index':'lf_index1_defJnt' }")
     
     # Build and align root groups
-    noXformGrp = cmds.group(empty=1)
-    noXformGrp = cmds.rename(noXformGrp, common.getName( node=noXformGrp, side=side, rigPart='hand', function='noXform', nodeType='grp'))
-    common.align(node=noXformGrp, target=root)
-    
-    # Scale reader node
-    scaleGrp = cmds.duplicate(noXformGrp)
-    scaleGrp = cmds.rename(scaleGrp, common.getName( node=scaleGrp, side=side, rigPart='hand', function='scaleReader', nodeType='grp'))
-    
-    xformGrp = cmds.duplicate(noXformGrp)
+    xformGrp = cmds.group(empty=1)
     xformGrp = cmds.rename(xformGrp, common.getName( node=xformGrp, side=side, rigPart='hand', function='xform', nodeType='grp'))
-    cmds.scaleConstraint( scaleGrp, xformGrp )
+    common.align(node=xformGrp, target=root)
     
-    rigGrp = cmds.duplicate(noXformGrp)
+    rigGrp = cmds.duplicate(xformGrp)
     rigGrp = cmds.rename(rigGrp, common.getName( node=rigGrp, side=side, rigPart='hand', function='rig', nodeType='grp'))
     cmds.parent( rigGrp, xformGrp )
-    
-    cmds.parent( scaleGrp, noXformGrp )
     
     # Root joint
     cmds.select(None)
@@ -62,6 +52,8 @@ def build( root, fingerDict, side='rt', cleanUp=1 ):
     if cleanUp:
         cmds.setAttr( '%s.visibility' % rigGrp, 0 )
         common.attrCtrl(nodeList=[rigGrp], attrList=['visibility'])
+        
+    return {'systemGrp':xformGrp}
         
 
 def buildFinger( side, name, rootJnt, rootGrp, cleanUp ):

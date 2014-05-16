@@ -24,11 +24,11 @@ def build():
     cmds.parent( ctrlsGrp, rootGrp )
     
     # root ctrls
-    allCtrl = controls.Control( side = "cn", rigPart = "root", function = "all", nodeType = "ctrl", size = 5, color = "green", aimAxis ="y" )
+    allCtrl = controls.Control( side = "cn", rigPart = "root", function = "all", nodeType = "ctrl", size = 4, color = "green", aimAxis ="y" )
     allCtrl.circleCtrl()
     cmds.parent(allCtrl.control, ctrlsGrp)
     
-    offsetCtrl = controls.Control( side = "cn", rigPart = "root", function = "offset", nodeType = "ctrl", size = 4, color = "green", aimAxis ="y" )
+    offsetCtrl = controls.Control( side = "cn", rigPart = "root", function = "offset", nodeType = "ctrl", size = 3, color = "green", aimAxis ="y" )
     offsetCtrl.circleCtrl()
     cmds.parent(offsetCtrl.control, allCtrl.control)
     
