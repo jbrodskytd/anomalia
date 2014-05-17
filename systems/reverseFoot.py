@@ -1,7 +1,7 @@
 import maya.cmds as cmds
 from anomalia.core import common, controls
 
-def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mesh = None ):
+def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mesh = None, stretchLoc = None, cleanup = 0 ):
 	'''
 	builds a reverse foot!
 	creates roll pivots, adds attributes to foot control and sets up the contact lattice.
@@ -15,22 +15,20 @@ def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mes
 	you will need to reorder the deformers.
 	
 	returns a dictionary containing corresponding objects for these keys: 
-	joints, pivots, ikHandles, lattice, grpSystem, ctrls
-	 
-	to do: hook to limb
+	joints, pivots, ikHandles, lattice, systemsGrp, ctrls
 	'''
 	
 		
 	# abort if not all arguments were supplied
-	if not jntFoot or not ctrlFoot or not ikHandleLeg or not mesh:
+	if not jntFoot or not ctrlFoot or not ikHandleLeg or not mesh or not stretchLoc:
 		return cmds.warning( 'Argument Error: Please supply all arguments (side, joint_footExtraEnd, control, ikHandle, mesh).' )
 	
 	
 	# vertex indices for left / right
 	pivotVertsLeft = [196, 199, 29, 28]
-	latticeVertIdsLeft = ['0:1', '8:9', '28:29', '39:42', '47:48', '51:52', '55:58', '63:64', '67:70', '196', '199', '206:207', '211:212', '241:242', '253', '264:265', '268:273', '278:279', '282:285', '290:291', '294:297', '302:303', '409', '414', '418', '434', '437:438', '447:448']
+	latticeVertIdsLeft = ['0:1', '8:9', '28:29', '39:42', '47:48', '51:52', '55:58', '63:64', '67:70', '196', '199', '206:207', '211:212', '241:242', '253', '264:265', '268:273', '278:279', '282:285', '290:291', '294:297', '302:303', '409', '414', '418', '434', '437:438', '447:448', '582:593']
 	pivotVertsRight = [219, 230, 36, 35]
-	latticeVertIdsRight = ['14:15', '24:25', '35:36', '43:46', '49:50', '53:54', '59:62', '65:66', '71:74', '219', '230:232', '237:238', '248:249', '258', '261:262', '266:267', '274:277', '280:281', '286:289', '292:293', '298:301', '304:305', '424:426', '430:431', '441:443']
+	latticeVertIdsRight = ['14:15', '24:25', '35:36', '43:46', '49:50', '53:54', '59:62', '65:66', '71:74', '219', '230:232', '237:238', '248:249', '258', '261:262', '266:267', '274:277', '280:281', '286:289', '292:293', '298:301', '304:305', '424:426', '430:431', '441:443', '594:605']
 	
 	# set side relevant data, abort if no side specified
 	if side in ['lf', 'left', 'lft']:
@@ -176,7 +174,7 @@ def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mes
 	cmds.setAttr( clampRollRight + '.maxR', rollLimit )
 	cmds.connectAttr( ctrlFoot + '.side', clampRollRight + '.inputR' )
 	cmds.connectAttr( clampRollRight + '.outputR', pivotRight + '.rotateZ' )
-
+	
 	# setup foot roll
 	cmds.setAttr( ctrlFoot + '.rollBreak', 30.0 )
 	cmds.addAttr( ctrlFoot + '.rollBreak', edit = True, min = 0.0, max = rollLimit )
@@ -350,7 +348,7 @@ def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mes
 			cmds.setAttr( remapRead + '.outputMax', 1 )
 			
 			cmds.setAttr( remapRead + '.value[0].value_FloatValue', 0 )	
-			cmds.setAttr( remapRead + '.value[0].value_Position', 0 )	
+			cmds.setAttr( remapRead + '.value[0].value_Position', -0.02 )
 			cmds.setAttr( remapRead + '.value[0].value_Interp', 1 )
 			
 			cmds.setAttr( remapRead + '.value[1].value_FloatValue', -1 )	
@@ -368,25 +366,54 @@ def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mes
 	clusterLattice = cmds.skinCluster( topLatticeJnts + baseLatticeJnts, ffdLattice ,tsb=True, skinMethod = 0, nw = 1)
 	clusterLattice = cmds.rename( clusterLattice, common.getName( node=clusterLattice, side=side, rigPart='foot', function='lattice', nodeType='skinCluster') )
 	
-	##grouping
+	
+	# create system and const groups
+	grpConst = cmds.group( empty = True, name = side + '_foot_const_grp' )
+	common.align( grpConst, ctrlFoot, translate = True, orient = False )
+	cmds.parentConstraint( ctrlFoot, grpConst, mo = True )
 	
 	grpSystem = cmds.group( empty = True, name = side + '_foot_grp' )
 	common.align( grpSystem, ctrlFoot, translate = True, orient = False )
-	cmds.parentConstraint( ctrlFoot, grpSystem, mo = True )
 	
-	grpReadLocs = cmds.parent( grpReadLocs, grpSystem )[0]
-	grpLatticeJnts = cmds.parent( grpLatticeJnts, grpSystem )[0]
-	pivotRight = cmds.parent( pivotRight, grpSystem )[0]
+	# grouping
+	grpConst = cmds.parent( grpConst, grpSystem )[0]
+	grpJnts = cmds.parent( grpJnts, grpSystem )[0]
+	ctrlGrpGround = cmds.parent( ctrlGrpGround, grpSystem )[0]
+	grpReadLocs = cmds.parent( grpReadLocs, pivotBall )[0]
+	grpLatticeJnts = cmds.parent( grpLatticeJnts, pivotBall )[0]
+	pivotRight = cmds.parent( pivotRight, grpConst )[0]
 	
 	cmds.setAttr( ffdLattice + '.inheritsTransform', 0 )
 	ffdLattice, ffdBase = cmds.parent( ffdLattice, ffdBase, pivotBall )
 	
+	# group ik handle
 	cmds.parent( ikHandleLeg, pivotBall )
 	for each in cmds.listRelatives( ikHandleLeg ):
 		if cmds.nodeType( each ) == 'pointConstraint':
 			cmds.delete( each )
 	
-	outDict['grpSystem'] = grpSystem
+	# constrain stretch locator
+	for each in cmds.listRelatives( stretchLoc ):
+		if cmds.nodeType( each ) == 'pointConstraint':
+			cmds.delete( each )
+	cmds.parentConstraint( pivotBall , stretchLoc, mo = True )
+	
+	# constrain low curve jnt grp
+	lowCurveGrp = None
+	systemGrpLimb = cmds.listRelatives( cmds.listRelatives( stretchLoc, p = True ), p = True )
+	for each in cmds.listRelatives( systemGrpLimb ):
+		if ( ( side + '_leg_low_curve' ) in each ) and ( cmds.nodeType( each ) == 'transform' ):
+			lowCurveGrp = each
+	if lowCurveGrp: cmds.parentConstraint( pivotBall, lowCurveGrp, mo = True )
+	else: print( 'Could not find leg_low_curve_#_jnt_grp, please constrain manually to ball pivot locator.' )
+	
+	# hide const / utility grp
+	if cleanup == 1:
+		cmds.setAttr( grpConst + '.visibility', 0 )
+	
+	
+	outDict['systemsGrp'] = grpSystem
+		
 	
 	cmds.select( ctrlFoot )
 	print('DO NOT FORGET: If the rig is build before there is a skincluster attached to the mesh you will need to reorder the deformers.')
