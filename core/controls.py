@@ -11,7 +11,7 @@ from anomalia.core.utils import showDialog
 
 class Control(object):
     
-    def __init__(self, side = "cn", rigPart = "spine", function = "", nodeType = "ctrl", size = 1, color = "green", aimAxis = "x", group = False):
+    def __init__(self, side = "cn", rigPart = "spine", function = "", nodeType = "ctrl", size = 1, color = "green", aimAxis = "x", group = False, flip = False):
         
         
         '''
@@ -41,6 +41,8 @@ class Control(object):
         self.aimAxis            = aimAxis
         ## create zero/offset grouping hierarchy
         self.group              = group
+        ## flips the control in the aim axis
+        self.flip               = flip
         
         self.control = None
         self.controlGrp = None
@@ -203,8 +205,6 @@ class Control(object):
                                    (1.039, 0.027, -0.252), (1.045, 0.027, -0.258), (1.09, 0.135, -0.299), (1.100, 0.135, -0.305), (1.081, 0.135, -0.375), (1.055, 0.135, -0.442),
                                    (1.023, 0.135, -0.506)], name = self.controlName)
         
-        cmds.duplicate(curve)
-        
         self.control = curve
         
         shapes = cmds.listRelatives(self.control, shapes = True)
@@ -291,6 +291,10 @@ class Control(object):
             
             common.insertGroup(self.control)
             #self.controlGrp = self.__groupHier(self.control)
+            
+        if self.flip == True:
+            
+            self.__flip()
         
     def __aimCtrl(self):
         
@@ -314,6 +318,29 @@ class Control(object):
             
             cmds.select("%s.cv[:]" % s)
             cmds.rotate(0, y, z, r = 1)
+            cmds.select(clear = True)
+            
+    def __flip(self):
+        
+        '''
+        
+        '''
+        
+        shapes = cmds.listRelatives(self.control, shapes = True)
+        
+        for s in shapes:
+            
+            cmds.select("%s.cv[:]" % s)
+        
+            if self.aimAxis == "x":
+                cmds.scale(-1, 1, 1, r = 1)
+                
+            if self.aimAxis == "y":
+                cmds.scale(1, -1, 1, r = 1)
+                
+            if self.aimAxis == "z":
+                cmds.scale(1, 1, -1, r = 1)
+                
             cmds.select(clear = True)
             
                 
@@ -390,7 +417,7 @@ def exportControl(fileName = None, ctrl = None):
 
 from anomalia.core import controls as controls
 
-ctrlToCreate = controls.Control(side = "rt", rigPart = "spine", function = "test", nodeType = "ctrl", size = 2, color = "red", aimAxis = "x", group = False)
+ctrlToCreate = controls.Control(side = "rt", rigPart = "spine", function = "test", nodeType = "ctrl", size = 2, color = "red", aimAxis = "x", group = False, flip = False)
 ctrlToCreate.crownCtrl()
 
 ################################################################
