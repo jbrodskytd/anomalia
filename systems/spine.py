@@ -39,14 +39,14 @@ def build ( hips=None, chest=None, head=None, numSpineJoints=6, numHeadJoints=6,
 
             
     # Build control objects
-    hipCtrl = controls.Control( side = "cn", rigPart = "spine", function = "hips", nodeType = "ctrl", size = 1, color = "green", aimAxis = "twistAxis" )
+    hipCtrl = controls.Control( side = "cn", rigPart = "spine", function = "hips", nodeType = "ctrl", size = 1.25, color = "green", aimAxis = "twistAxis" )
     hipCtrl.circleCtrl()
     hipGrp = common.insertGroup( node=hipCtrl.control )
     hipGrp = cmds.rename( hipGrp, hipCtrl.control.replace('ctrl', 'grp') )
     common.align( node=hipGrp, target=xformGrp )
     cmds.parent(hipGrp, xformGrp)
     
-    chestCtrl = controls.Control( side = "cn", rigPart = "spine", function = "chest", nodeType = "ctrl", size = 1, color = "green", aimAxis = "twistAxis" )
+    chestCtrl = controls.Control( side = "cn", rigPart = "spine", function = "chest", nodeType = "ctrl", size = 1.25, color = "green", aimAxis = "twistAxis" )
     chestCtrl.circleCtrl()
     chestGrp = common.insertGroup( node=chestCtrl.control )
     chestGrp = cmds.rename( chestGrp, chestCtrl.control.replace('ctrl', 'grp') )
@@ -54,7 +54,7 @@ def build ( hips=None, chest=None, head=None, numSpineJoints=6, numHeadJoints=6,
     common.align( node=chestGrp, translate=False, target=xformGrp )
     cmds.parent(chestGrp, hipCtrl.control)
     
-    headCtrl = controls.Control( side = "cn", rigPart = "spine", function = "head", nodeType = "ctrl", size = 1, color = "green", aimAxis = "twistAxis" )
+    headCtrl = controls.Control( side = "cn", rigPart = "spine", function = "head", nodeType = "ctrl", size = 1.25, color = "green", aimAxis = "twistAxis" )
     headCtrl.crownCtrl()
     headGrp = common.insertGroup( node=headCtrl.control )
     headGrp = cmds.rename( headGrp, headCtrl.control.replace('ctrl', 'grp') )
@@ -248,6 +248,9 @@ def build ( hips=None, chest=None, head=None, numSpineJoints=6, numHeadJoints=6,
         
     returnDict = collections.defaultdict(list)
     returnDict['xformGrp'].append( xformGrp )
+    returnDict['hipCtrl'].append( hipCtrl.control )
+    returnDict['chestCtrl'].append( chestCtrl.control )
+    returnDict['headCtrl'].append( headCtrl.control )
     
     return returnDict
     

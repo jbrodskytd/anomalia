@@ -294,7 +294,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     # extra attributes to endCtrl
     cmds.addAttr( limbEndCtrl.control, ln='twist', k=True )
     cmds.connectAttr( limbEndCtrl.control+'.twist', ikHandle+'.twist' )
-    return
+    #return
     #
     # CLEAN UP
     #

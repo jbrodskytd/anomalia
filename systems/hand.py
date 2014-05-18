@@ -59,15 +59,15 @@ def build( root, fingerDict, side='rt', cleanUp=1 ):
 def buildFinger( side, name, rootJnt, rootGrp, cleanUp ):
     # Get aim axis - this presumes the rootJnt is NOT an extend joint
     childJnt = cmds.listRelatives( rootJnt, c=1, type='joint' )[0]
-    childPos = cmds.getAttr('%s.t' % childJnt)
-    childPosAbs = [ math.fabs(value) for value in childPos[0] ]
+    childPos = cmds.getAttr('%s.t' % childJnt)[0]
+    childPosAbs = [ math.fabs(value) for value in childPos ]
     twistIndex = childPosAbs.index(max(childPosAbs))
     twistAxis = ['x', 'y', 'z'][ twistIndex ]
     
     # Determine whether the joints have a negative translation along the twist axis
-    neg = 0
+    neg = False
     if childPos[ twistIndex ] < 0.0:
-        neg = 1
+        neg = True
     
     # Duplicate joint chain
     dupJnts = cmds.duplicate( rootJnt, rc=1 )
@@ -92,7 +92,7 @@ def buildFinger( side, name, rootJnt, rootGrp, cleanUp ):
             
             if d < (len(dupJnts)-1):
                 # Build control
-                c = controls.Control( side=side, rigPart="hand", function='%s%s' % ( name, index ), nodeType="ctrl", size=0.15, color=side, aimAxis=twistAxis )
+                c = controls.Control( side=side, rigPart="hand", function='%s%s' % ( name, index ), nodeType="ctrl", size=0.15, color=side, aimAxis=twistAxis, flip=neg )
                 c.pinCtrl()
                 grp = common.insertGroup( node=c.control )
                 grp = cmds.rename( grp, c.control.replace('ctrl', 'grp') )

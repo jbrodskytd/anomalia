@@ -333,13 +333,13 @@ class Control(object):
             cmds.select("%s.cv[:]" % s)
         
             if self.aimAxis == "x":
-                cmds.scale(-1, 1, 1, r = 1)
+                cmds.rotate(180, 0, 0, r = 1)
                 
             if self.aimAxis == "y":
-                cmds.scale(1, -1, 1, r = 1)
+                cmds.rotate(0, 180, 0, r = 1)
                 
             if self.aimAxis == "z":
-                cmds.scale(1, 1, -1, r = 1)
+                cmds.rotate(0, 0, 180, r = 1)
                 
             cmds.select(clear = True)
             
