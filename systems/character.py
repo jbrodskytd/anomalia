@@ -191,6 +191,9 @@ def connectToPuppet():
                      'lf_knee_4_defJnt':'lf_low_leg_4_jnt',
                      'lf_foot_defJnt':'lf_end_leg_jnt',
                      'lf_foot_end_defJnt':'lf_extra_leg_drvJnt',
+                     'lf_ankle_defJnt':'lf_ankle_driven_jnt',
+                     'lf_ball_defJnt':'lf_ball_driven_jnt',
+                     'lf_toe_defJnt':'lf_toe_driven_jnt',
                      
                      # rt arm
                      'rt_shoulder_1_defJnt':'rt_up_arm_1_jnt',
@@ -247,7 +250,10 @@ def connectToPuppet():
                      'rt_knee_3_defJnt':'rt_low_leg_3_jnt',
                      'rt_knee_4_defJnt':'rt_low_leg_4_jnt',
                      'rt_foot_defJnt':'rt_end_leg_jnt',
-                     'rt_foot_end_defJnt':'rt_extra_leg_drvJnt'
+                     'rt_foot_end_defJnt':'rt_extra_leg_drvJnt',
+                     'rt_ankle_defJnt':'rt_ankle_driven_jnt',
+                     'rt_ball_defJnt':'rt_ball_driven_jnt',
+                     'rt_toe_defJnt':'rt_toe_driven_jnt'
                      }
     
     for key in constrainDict.keys():

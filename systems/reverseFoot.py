@@ -106,18 +106,18 @@ def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mes
 	cmds.select( clear = True )
 	
 	jntAnkle = cmds.joint()
-	jntAnkle = cmds.rename(jntAnkle, common.getName( node=jntAnkle, side=side, rigPart='ankle', function='def', nodeType='jnt'))
+	jntAnkle = cmds.rename(jntAnkle, common.getName( node=jntAnkle, side=side, rigPart='ankle', function='driven', nodeType='jnt'))
 	cmds.xform( jntAnkle, ws = True, translation = ( cmds.xform( ikHandleLeg, q = True, t = True, ws = True ) ) )
 	cmds.setAttr( jntAnkle + '.radius', .75 * cmds.getAttr( jntFoot + '.radius' ) )	
 	
 	jntBall = cmds.joint()
-	jntBall = cmds.rename(jntBall, common.getName( node=jntBall, side=side, rigPart='ball', function='def', nodeType='jnt'))
+	jntBall = cmds.rename(jntBall, common.getName( node=jntBall, side=side, rigPart='ball', function='driven', nodeType='jnt'))
 	cmds.xform( jntBall, ws = True, t = ( cmds.xform( jntFoot, q = True, ws = True, t = True ) ) )
 	cmds.xform( jntBall, ws = True, relative = True, t = ( 0, 0, .5 * cmds.xform( pivotFront, q = True, t = True, ws = True )[2] ) )
 	cmds.setAttr( jntBall + '.radius', .75 * cmds.getAttr( jntFoot + '.radius' ) )
 	
 	jntToe = cmds.joint()
-	jntToe = cmds.rename(jntToe, common.getName( node=jntToe, side=side, rigPart='toe', function='def', nodeType='jnt'))
+	jntToe = cmds.rename(jntToe, common.getName( node=jntToe, side=side, rigPart='toe', function='driven', nodeType='jnt'))
 	cmds.xform( jntToe, t = ( 0, 0, .5 * cmds.xform( pivotFront, q = True, t = True, ws = True )[2] ), relative = True, ws = True )
 	cmds.setAttr( jntToe + '.radius', cmds.getAttr( jntBall + '.radius' ) )
 	
@@ -417,5 +417,5 @@ def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mes
 	
 	cmds.select( ctrlFoot )
 	print('DO NOT FORGET: If the rig is build before there is a skincluster attached to the mesh you will need to reorder the deformers.')
-	print('Reverse Foot created.')
+	print('Reverse Foot %s created.' % side)
 	return outDict
