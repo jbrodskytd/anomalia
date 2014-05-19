@@ -294,7 +294,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     # extra attributes to endCtrl
     cmds.addAttr( limbEndCtrl.control, ln='twist', k=True )
     cmds.connectAttr( limbEndCtrl.control+'.twist', ikHandle+'.twist' )
-    #return
+
     #
     # CLEAN UP
     #
@@ -306,6 +306,14 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     cmds.parent( lowTwistDict['motionPaths_group'], upTwistDict['motionPaths_group'], systemGrp )
     for mp in cmds.listRelatives( lowTwistDict['motionPaths_group'] ) + cmds.listRelatives( upTwistDict['motionPaths_group'] ):
         cmds.setAttr( mp+'.inheritsTransform', 0 )
+
+    # parenting everything under one group
+    cmds.parent( upTwistDict['joints_group'], lowTwistDict['joints_group'], systemGrp ) # joints
+    cmds.parent( limbStartCtrlGrp, limbEndCtrlGrp, pvCtrlGrp, systemGrp ) # ctrls
+
+    # not sure if needed, gets rids of cycles though
+    cmds.setAttr( limbStartCtrlGrp+'.inheritsTransform', 0 )
+    cmds.setAttr( limbEndCtrlGrp+'.inheritsTransform', 0 )
 
 
     returnDic = { 'ikHandle'   : ikHandle,
