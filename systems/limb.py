@@ -271,7 +271,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     #
     ikHandle, effector = cmds.ikHandle( startJoint=joint1, endEffector=joint3, solver='ikRPsolver', n=side+'_'+name+'_ikHandle' )
 
-    pvCtrl   = controls.Control( side=side, rigPart=name, function='poleVec', nodeType="ctrl", size=0.3, color="green", aimAxis="twistAxis" )
+    pvCtrl   = controls.Control( side=side, rigPart=name, function='poleVec', nodeType="ctrl", size=0.3, color=myColor, aimAxis="twistAxis" )
     pvCtrl.cubeCtrl()
 
     # snaps the poleVector control to the middle joint
