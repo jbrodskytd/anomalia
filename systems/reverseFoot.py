@@ -416,6 +416,6 @@ def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mes
 		
 	
 	cmds.select( ctrlFoot )
-	print('DO NOT FORGET: If the rig is build before there is a skincluster attached to the mesh you will need to reorder the deformers.')
-	print('Reverse Foot created.')
+	print( 'DO NOT FORGET: If the rig is build before there is a skincluster attached to the mesh you will need to reorder the deformers.' )
+	print( 'Reverse Foot %s created.' % side )
 	return outDict
