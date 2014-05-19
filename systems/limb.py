@@ -37,13 +37,13 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     elif side == 'rt': myColor = 'red'
 
     # creation of the start control (shoulder or hips offset)
-    limbStartCtrl = controls.Control( side=side, rigPart='limb', function=name+'_start', nodeType='ctrl', size=1, color=myColor, aimAxis='z' )
+    limbStartCtrl = controls.Control( side=side, rigPart='limb', function=name+'_start', nodeType='ctrl', size=0.4, color=myColor, aimAxis='z' )
     limbStartCtrl.pinCtrl()
     common.align( node=limbStartCtrl.control, target=joint1, orient=False )
     limbStartCtrlGrp = common.insertGroup( node=limbStartCtrl.control )
 
     # creation of the end control (hand or foot)
-    limbEndCtrl = controls.Control( side=side, rigPart='limb', function=name+'_end', nodeType='ctrl', size=1, color=myColor, aimAxis='x' )
+    limbEndCtrl = controls.Control( side=side, rigPart='limb', function=name+'_end', nodeType='ctrl', size=0.4, color=myColor, aimAxis='x' )
     limbEndCtrl.cubeCtrl()
     common.align( node=limbEndCtrl.control, target=joint3, orient=False )
     limbEndCtrlGrp = common.insertGroup( node=limbEndCtrl.control )
@@ -272,7 +272,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     #
     ikHandle, effector = cmds.ikHandle( startJoint=joint1, endEffector=joint3, solver='ikRPsolver', n=side+'_'+name+'_ikHandle' )
 
-    pvCtrl   = controls.Control( side=side, rigPart=name, function='poleVec', nodeType="ctrl", size=1, color="green", aimAxis="twistAxis" )
+    pvCtrl   = controls.Control( side=side, rigPart=name, function='poleVec', nodeType="ctrl", size=0.3, color="green", aimAxis="twistAxis" )
     pvCtrl.cubeCtrl()
 
     # snaps the poleVector control to the middle joint
