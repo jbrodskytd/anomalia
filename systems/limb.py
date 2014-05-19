@@ -10,7 +10,7 @@ from anomalia.core import common, controls
 from anomalia.core.utils import showDialog
 
 
-def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, side=None, name=None, twistJointCount=None, isLeg=False ):
+def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, side=None, name=None, twistJointCount=None, isLeg=False, cleanUp=True ):
     if not startJoint or not middleJoint or not endJoint or not extraJoint or not side or not name or not twistJointCount:
         print 'limb: Error! Must supply all arguments.'
         return
@@ -37,7 +37,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     elif side == 'rt': myColor = 'red'
 
     # creation of the start control (shoulder or hips offset)
-    limbStartCtrl = controls.Control( side=side, rigPart='limb', function=name+'_start', nodeType='ctrl', size=0.4, color=myColor, aimAxis='z' )
+    limbStartCtrl = controls.Control( side=side, rigPart='limb', function=name+'_start', nodeType='ctrl', size=0.4, color=myColor, aimAxis='y' )
     limbStartCtrl.pinCtrl()
     common.align( node=limbStartCtrl.control, target=joint1, orient=False )
     limbStartCtrlGrp = common.insertGroup( node=limbStartCtrl.control )
@@ -50,7 +50,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
 
 
     # entire system group
-    systemGrp = cmds.group( empty=True, n=side+'_'+name+'_grp')
+    systemGrp = cmds.group( empty=True, n=side+'_'+name+'_xform_grp')
     cmds.parent( joint1, systemGrp )
 
     #
@@ -252,7 +252,6 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
 
     # constrains entire limb to startCtrl
     cmds.orientConstraint( limbStartCtrl.control, startNonRollGrp, mo=True )
-    cmds.parentConstraint( limbStartCtrl.control, systemGrp, mo=True )
 
     # skin the twistSection curves to these joints
     skinClsUp  = cmds.skinCluster( crvJntA1, crvJntA2, crvJntB1, crvJntB2, upTwistDict['twist_curve'] )[0]
@@ -298,22 +297,22 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     #
     # CLEAN UP
     #
-    cmds.parent( ikHandle, limbEndCtrl.control )
-    cmds.parent( lowTwistDict['twist_curve'], upTwistDict['twist_curve'], avgGrp, systemGrp )
-    cmds.setAttr( lowTwistDict['twist_curve']+'.inheritsTransform', 0 )
-    cmds.setAttr( upTwistDict['twist_curve']+'.inheritsTransform', 0 )
+    if cleanUp:
+        cmds.parent( ikHandle, limbEndCtrl.control )
+        cmds.setAttr( lowTwistDict['twist_curve']+'.inheritsTransform', 0 )
+        cmds.setAttr( upTwistDict['twist_curve']+'.inheritsTransform', 0 )
 
-    cmds.parent( lowTwistDict['motionPaths_group'], upTwistDict['motionPaths_group'], systemGrp )
-    for mp in cmds.listRelatives( lowTwistDict['motionPaths_group'] ) + cmds.listRelatives( upTwistDict['motionPaths_group'] ):
-        cmds.setAttr( mp+'.inheritsTransform', 0 )
+        for mp in cmds.listRelatives( lowTwistDict['motionPaths_group'] ) + cmds.listRelatives( upTwistDict['motionPaths_group'] ):
+            cmds.setAttr( mp+'.inheritsTransform', 0 )
 
-    # parenting everything under one group
-    cmds.parent( upTwistDict['joints_group'], lowTwistDict['joints_group'], systemGrp ) # joints
-    cmds.parent( limbStartCtrlGrp, limbEndCtrlGrp, pvCtrlGrp, systemGrp ) # ctrls
+        if isLeg: cmds.setAttr( limbStartCtrl.control+'.v', 0 ) # hides first control of the leg
 
-    # not sure if needed, gets rids of cycles though
-    cmds.setAttr( limbStartCtrlGrp+'.inheritsTransform', 0 )
-    cmds.setAttr( limbEndCtrlGrp+'.inheritsTransform', 0 )
+        # parenting everything under one group
+        cmds.parent( limbStartCtrlGrp, limbEndCtrlGrp, pvCtrlGrp, systemGrp ) # ctrls
+        hideGrp = cmds.group( joint1, startNonRollGrp, ssGrp, crvJntA1, crvJntD1Grp, lowTwistDict['twist_curve'], upTwistDict['twist_curve'], avgGrp, lowTwistDict['motionPaths_group'], upTwistDict['motionPaths_group'], upTwistDict['joints_group'], lowTwistDict['joints_group'], name=systemGrp.replace('_grp', '_hide_grp'), parent=systemGrp )
+        cmds.setAttr( hideGrp+'.v', 0 )
+
+        cmds.parentConstraint( limbStartCtrl.control, hideGrp, mo=True )
 
 
     returnDic = { 'ikHandle'   : ikHandle,
