@@ -76,7 +76,8 @@ def build ( char=None, cleanUp=False ):
                                  ctrlFoot = lf_leg['end_ctrl'],
                                  ikHandleLeg = lf_leg['ikHandle'],
                                  mesh = 'cn_body_render_mesh',
-                                 stretchLoc = lf_leg['stretch_positions'][1]
+                                 stretchLoc = lf_leg['stretch_positions'][1],
+                                 cleanUp = True
                                  )
     cmds.parent( lf_foot['systemsGrp'], rootSys['systemsGrp'])
     
@@ -85,7 +86,8 @@ def build ( char=None, cleanUp=False ):
                                  ctrlFoot = rt_leg['end_ctrl'],
                                  ikHandleLeg = rt_leg['ikHandle'],
                                  mesh = 'cn_body_render_mesh',
-                                 stretchLoc = rt_leg['stretch_positions'][1]
+                                 stretchLoc = rt_leg['stretch_positions'][1],
+                                 cleanUp = True
                                  )
     cmds.parent( rt_foot['systemsGrp'], rootSys['systemsGrp'])
     

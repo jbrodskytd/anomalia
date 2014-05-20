@@ -34,9 +34,12 @@ def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mes
 	if side in ['lf', 'left', 'lft']:
 		pivotVerts = pivotVertsLeft
 		latticeVertIds = latticeVertIdsLeft
+		sideColor = 'blue'
+
 	elif side in ['rt', 'right', 'rgt']:
 		pivotVerts = pivotVertsRight
 		latticeVertIds = latticeVertIdsRight
+		sideColor = 'red'
 	
 	else:
 		return cmds.warning( 'No valid side specified' )
@@ -227,7 +230,7 @@ def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mes
 	ffd = cmds.rename( ffd, common.getName( node=ffd, side=side, rigPart='foot', function='contact', nodeType='ffd') )
 	ffdLattice = cmds.rename( ffdLattice, common.getName( node=ffdLattice, side=side, rigPart='foot', function='contact', nodeType='ffdlattice') )
 	ffdBase = cmds.rename( ffdBase, common.getName( node=ffdBase, side=side, rigPart='foot', function='contact', nodeType='ffdbase') )
-	cmds.addAttr( ctrlFoot + '.squashGroundContact', edit = True, min = 0.0, max = 1.0 )
+	cmds.addAttr( ctrlFoot + '.squashGroundContact', edit = True, min = 0.0 ) #, max = 1.0
 	cmds.setAttr( ctrlFoot + '.squashGroundContact',  1.0 )
 	cmds.connectAttr( ctrlFoot + '.squashGroundContact', ffd + '.envelope' )
 	
@@ -236,7 +239,7 @@ def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mes
 	
 	
 	# set up ground contact control
-	ctrlGround = controls.Control( side = side, rigPart = "foot", function = "contact", nodeType = "ctrl", size = 1.5, color = "red", aimAxis = "x" )
+	ctrlGround = controls.Control( side = side, rigPart = "foot", function = "contact", nodeType = "ctrl", size = 1.5, color = sideColor, aimAxis = "x" )
 	ctrlGround.squareCtrl()
 	cmds.rotate( 0, 45, 0, ctrlGround.control + '.cv[0:4]', relative = True, objectSpace = True )
 	cmds.xform( ctrlGround.control, ws = True, t = cmds.xform( jntFoot, q = True, ws = True , t = True ) )

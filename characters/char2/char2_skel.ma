@@ -1,6 +1,6 @@
 //Maya ASCII 2014 scene
 //Name: char2_skel.ma
-//Last modified: Mon, May 19, 2014 09:15:45 PM
+//Last modified: Mon, May 19, 2014 09:24:00 PM
 //Codeset: 1252
 requires maya "2014";
 requires -nodeType "mentalrayFramebuffer" -nodeType "mentalrayOutputPass" -nodeType "mentalrayRenderPass"
@@ -89,17 +89,16 @@ fileInfo "cutIdentifier" "201303010241-864206";
 fileInfo "osv" "Microsoft Windows 7 Enterprise Edition, 64-bit Windows 7 Service Pack 1 (Build 7601)\n";
 createNode transform -shared -name "persp";
 	setAttr ".visibility" no;
-	setAttr ".translate" -type "double3" 10.314629310425699 12.315023022468518 18.386464407450717 ;
-	setAttr ".rotate" -type "double3" -19.538352729205908 32.199999999999918 9.3966567232476415e-016 ;
+	setAttr ".translate" -type "double3" 14.517550786677178 7.740155585497253 13.214079860490111 ;
+	setAttr ".rotate" -type "double3" -10.538352729206736 50.600000000000598 0 ;
 createNode camera -shared -name "perspShape" -parent "persp";
 	setAttr -keyable off ".visibility" no;
 	setAttr ".focalLength" 34.999999999999986;
-	setAttr ".centerOfInterest" 23.152241242038961;
+	setAttr ".centerOfInterest" 20.061605425341735;
 	setAttr ".imageName" -type "string" "persp";
 	setAttr ".depthName" -type "string" "persp_depth";
 	setAttr ".maskName" -type "string" "persp_mask";
-	setAttr ".tumblePivot" -type "double3" 2.2639756147579959e-007 0.019919706206672272 
-		0.57052725553512584 ;
+	setAttr ".tumblePivot" -type "double3" 0.5787784527951223 0.019919706376903212 0.57067841291427601 ;
 	setAttr ".homeCommand" -type "string" "viewSet -p %camera";
 createNode transform -shared -name "top";
 	setAttr ".visibility" no;
@@ -432,7 +431,7 @@ createNode joint -name "lf_hand_pinky3_defJnt" -parent "lf_hand_pinkyExtend3_def
 		-3.4497649816091144e-016 ;
 	setAttr ".minRotLimit" -type "double3" -360 -360 -360 ;
 	setAttr ".maxRotLimit" -type "double3" 360 360 360 ;
-	setAttr ".jointOrient" -type "double3" 3.7026529683355343e-025 -0.00022336818504197086 
+	setAttr ".jointOrient" -type "double3" 3.7026529683355352e-025 -0.00022336818504197086 
 		0.0013471646102409913 ;
 	setAttr ".side" 1;
 	setAttr ".type" 18;
@@ -992,7 +991,7 @@ createNode joint -name "rt_hand_pinky1_defJnt" -parent "rt_hand_root_defJnt";
 		2.7537304325697676e-008 ;
 	setAttr ".minRotLimit" -type "double3" -360 -360 -360 ;
 	setAttr ".maxRotLimit" -type "double3" 360 360 360 ;
-	setAttr ".jointOrient" -type "double3" 9.3894736533303849e-006 4.6447227982446302 
+	setAttr ".jointOrient" -type "double3" 9.3894736533303866e-006 4.6447227982446302 
 		-16.307701802851465 ;
 	setAttr ".side" 2;
 	setAttr ".type" 18;
@@ -1023,7 +1022,7 @@ createNode joint -name "rt_hand_pinky2_defJnt" -parent "rt_hand_pinkyExtend2_def
 	setAttr ".translate" -type "double3" 0 -1.7763568394002505e-015 0 ;
 	setAttr ".minRotLimit" -type "double3" -360 -360 -360 ;
 	setAttr ".maxRotLimit" -type "double3" 360 360 360 ;
-	setAttr ".jointOrient" -type "double3" 8.5249933409967832e-007 0.00017212451822694596 
+	setAttr ".jointOrient" -type "double3" 8.5249933409967853e-007 0.00017212451822694596 
 		-0.00084837080548103559 ;
 	setAttr ".side" 2;
 	setAttr ".type" 18;
@@ -1257,7 +1256,7 @@ createNode joint -name "rt_hand_indexExtend3_defJnt" -parent "rt_hand_index2_def
 		-minValue 0 -maxValue 1 -attributeType "bool";
 	setAttr ".overrideEnabled" yes;
 	setAttr ".overrideColor" 13;
-	setAttr ".translate" -type "double3" -0.56000313109840061 -7.7395276614211622e-006 
+	setAttr ".translate" -type "double3" -0.56000313109840061 -7.7395276614211605e-006 
 		2.9316356253694664e-007 ;
 	setAttr ".minRotLimit" -type "double3" -360 -360 -360 ;
 	setAttr ".maxRotLimit" -type "double3" 360 360 360 ;
@@ -1403,25 +1402,25 @@ createNode joint -name "rt_hand_thumb4_defJnt" -parent "rt_hand_thumb3_defJnt";
 createNode joint -name "rt_ankle_defJnt";
 	setAttr ".overrideEnabled" yes;
 	setAttr ".overrideColor" 13;
-	setAttr ".translate" -type "double3" -0.57877799999999968 0.68881099999999984 3.8063200000000036e-016 ;
+	setAttr ".translate" -type "double3" -0.57877799999999968 0.68881099999999984 3.8063200000000031e-016 ;
 	setAttr ".rotate" -type "double3" -1.3055269535586164e-016 1.9001457584138921e-007 
-		-7.8731993548209909e-008 ;
+		-7.8731993548209895e-008 ;
 	setAttr ".minRotLimit" -type "double3" -360 -360 -360 ;
 	setAttr ".maxRotLimit" -type "double3" 360 360 360 ;
 	setAttr ".jointOrient" -type "double3" 0 -2.544443745170814e-014 1.2722218725854073e-014 ;
-	setAttr ".radius" 0.75;
+	setAttr ".radius" 0.39999999999999997;
 createNode joint -name "rt_ball_defJnt" -parent "rt_ankle_defJnt";
 	setAttr ".translate" -type "double3" 3.3306690738754696e-016 -0.68828291700000011 
 		0.28518804907798762 ;
 	setAttr ".rotate" -type "double3" 0 0 -2.056800083631329e-007 ;
 	setAttr ".minRotLimit" -type "double3" -360 -360 -360 ;
 	setAttr ".maxRotLimit" -type "double3" 360 360 360 ;
-	setAttr ".radius" 0.75;
+	setAttr ".radius" 0.5;
 createNode joint -name "rt_toe_defJnt" -parent "rt_ball_defJnt";
 	setAttr ".translate" -type "double3" 0 0 0.28518804907798767 ;
 	setAttr ".minRotLimit" -type "double3" -360 -360 -360 ;
 	setAttr ".maxRotLimit" -type "double3" 360 360 360 ;
-	setAttr ".radius" 0.75;
+	setAttr ".radius" 0.5;
 createNode joint -name "lf_ankle_defJnt";
 	setAttr ".overrideEnabled" yes;
 	setAttr ".overrideColor" 6;
@@ -1430,21 +1429,21 @@ createNode joint -name "lf_ankle_defJnt";
 		-7.8767553266402702e-008 ;
 	setAttr ".minRotLimit" -type "double3" -360 -360 -360 ;
 	setAttr ".maxRotLimit" -type "double3" 360 360 360 ;
-	setAttr ".jointOrient" -type "double3" 1.9083328088781094e-014 2.5444437451708134e-014 
+	setAttr ".jointOrient" -type "double3" 1.9083328088781094e-014 2.544443745170814e-014 
 		-1.5902773407317587e-014 ;
-	setAttr ".radius" 0.75;
+	setAttr ".radius" 0.39999999999999997;
 createNode joint -name "lf_ball_defJnt" -parent "lf_ankle_defJnt";
 	setAttr ".translate" -type "double3" -4.4408920985006262e-016 -0.68828324607288338 
 		0.28533920645713773 ;
-	setAttr ".rotate" -type "double3" 0 0 -2.0567998291869542e-007 ;
+	setAttr ".rotate" -type "double3" 0 0 -2.0567998291869544e-007 ;
 	setAttr ".minRotLimit" -type "double3" -360 -360 -360 ;
 	setAttr ".maxRotLimit" -type "double3" 360 360 360 ;
-	setAttr ".radius" 0.75;
+	setAttr ".radius" 0.5;
 createNode joint -name "lf_toe_defJnt" -parent "lf_ball_defJnt";
 	setAttr ".translate" -type "double3" 0 0 0.28533920645713806 ;
 	setAttr ".minRotLimit" -type "double3" -360 -360 -360 ;
 	setAttr ".maxRotLimit" -type "double3" 360 360 360 ;
-	setAttr ".radius" 0.75;
+	setAttr ".radius" 0.5;
 createNode lightLinker -shared -name "lightLinker1";
 	setAttr -size 3 ".link";
 	setAttr -size 3 ".shadowLink";
@@ -2469,7 +2468,6 @@ select -noExpand :defaultHardwareRenderGlobals;
 	setAttr -keyable on ".antiAliasPolygons";
 	setAttr -keyable on ".geometryMask";
 	setAttr -channelBox on ".displayShadows";
-select -noExpand :ikSystem;
 connectAttr "cn_spine_01_defJnt.scale" "cn_spine_02_defJnt.inverseScale";
 connectAttr "cn_spine_02_defJnt.scale" "cn_spine_03_defJnt.inverseScale";
 connectAttr "cn_spine_03_defJnt.scale" "cn_spine_04_defJnt.inverseScale";
