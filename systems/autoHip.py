@@ -78,4 +78,3 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl):
 def test():
     createAutoHip("rt_leg_skin_jnt", "cn_cog_fk_ctrl", "lf_foot_ik_ctrl")
     
-test()
