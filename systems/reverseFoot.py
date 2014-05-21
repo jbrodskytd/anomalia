@@ -1,7 +1,7 @@
 import maya.cmds as cmds
 from anomalia.core import common, controls
 
-def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mesh = None, stretchLoc = None, cleanup = 0 ):
+def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mesh = None, stretchLoc = None, cleanUp = 0 ):
 	'''
 	builds a reverse foot!
 	creates roll pivots, adds attributes to foot control and sets up the contact lattice.
@@ -182,12 +182,31 @@ def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mes
 	cmds.setAttr( ctrlFoot + '.rollBreak', 30.0 )
 	cmds.addAttr( ctrlFoot + '.rollBreak', edit = True, min = 0.0, max = rollLimit )
 	cmds.addAttr( ctrlFoot + '.roll', edit = True, min = -rollLimit, max = rollLimit )
-	
+
 	clampRollBall = cmds.shadingNode( 'clamp', asUtility = True )
 	clampRollBall = cmds.rename( clampRollBall, common.getName( node=clampRollBall, side=side, rigPart='ball', function='roll', nodeType='clamp') )
 	cmds.connectAttr( ctrlFoot + '.rollBreak', clampRollBall + '.maxR' )
 	cmds.connectAttr( ctrlFoot + '.roll', clampRollBall + '.inputR' )
-	cmds.connectAttr( clampRollBall + '.outputR', pivotBall + '.rotateX' )
+
+	pmaRollBall = cmds.shadingNode( 'plusMinusAverage', asUtility = True )
+	cmds.setAttr( pmaRollBall + '.operation', 2 )
+	cmds.setAttr( pmaRollBall + '.input1D[0]', 180 )
+	cmds.connectAttr( ctrlFoot + '.rollBreak', pmaRollBall + '.input1D[1]' )
+
+	remapRollBall = cmds.shadingNode( 'remapValue', asUtility = True )
+	cmds.setAttr( remapRollBall + '.outputMin', -1 )
+	cmds.setAttr( remapRollBall + '.outputMax', 1 )
+	cmds.setAttr( remapRollBall + '.value[0].value_Position', 0 )
+	cmds.setAttr( remapRollBall + '.value[0].value_FloatValue', 1 )
+	cmds.setAttr( remapRollBall + '.value[1].value_Position', 1 )
+	cmds.setAttr( remapRollBall + '.value[1].value_FloatValue', 0 )
+	cmds.connectAttr( ctrlFoot + '.rollBreak', remapRollBall + '.inputMin' )
+	cmds.connectAttr( pmaRollBall + '.output1D', remapRollBall + '.inputMax' )
+
+	multRollBall = cmds.shadingNode( 'multiplyDivide', asUtility = True )
+	cmds.connectAttr( clampRollBall + '.outputR', multRollBall + '.input1X' )
+	cmds.connectAttr( remapRollBall + '.outValue', multRollBall + '.input2X' )
+	cmds.connectAttr( multRollBall + '.outputX', pivotBall + '.rotateX' )
 			
 	clampRollFront = cmds.shadingNode( 'clamp', asUtility = True )
 	clampRollFront = cmds.rename( clampRollFront, common.getName( node=clampRollFront, side=side, rigPart='toe', function='roll', nodeType='clamp') )
@@ -399,7 +418,7 @@ def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mes
 	for each in cmds.listRelatives( stretchLoc ):
 		if cmds.nodeType( each ) == 'pointConstraint':
 			cmds.delete( each )
-	cmds.parentConstraint( pivotBall , stretchLoc, mo = True )
+	cmds.parentConstraint( pivotBall , stretchLoc, mo = True, weight = 1 )
 	
 	# constrain low curve jnt grp
 	lowCurveGrp = None
@@ -407,11 +426,16 @@ def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mes
 	for each in cmds.listRelatives( systemGrpLimb ):
 		if ( ( side + '_leg_low_curve' ) in each ) and ( cmds.nodeType( each ) == 'transform' ):
 			lowCurveGrp = each
-	if lowCurveGrp: cmds.parentConstraint( pivotBall, lowCurveGrp, mo = True )
+
+	if lowCurveGrp:
+		for each in cmds.listRelatives( lowCurveGrp ):
+			if cmds.nodeType( each ) == 'parentConstraint':
+				cmds.delete( each )
+		cmds.parentConstraint( pivotBall, lowCurveGrp, mo = True )
 	else: print( 'Could not find leg_low_curve_#_jnt_grp, please constrain manually to ball pivot locator.' )
 	
 	# hide const / utility grp
-	if cleanup == 1:
+	if cleanUp == 1:
 		cmds.setAttr( grpConst + '.visibility', 0 )
 	
 	
