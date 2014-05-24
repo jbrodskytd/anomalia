@@ -48,8 +48,8 @@ def getSkinWeights( char = '', meshes = [] ):
 		#prune to get rid of 0 zero value indices
 		normState = cmds.getAttr( '%s.normalizeWeights' % clusterName )
 		shapeName = cmds.listRelatives( mesh, shapes = True )[0]
-		cmds.setAttr( '%s.normalizeWeights' % clusterName, True )
-		cmds.skinPercent( clusterName, shapeName, normalize = False, pruneWeights = 0.01 )
+		cmds.setAttr( '%s.normalizeWeights' % clusterName, False )
+		cmds.skinPercent( clusterName, shapeName, normalize = False, pruneWeights = 0.001 )
 		cmds.setAttr('%s.normalizeWeights' % clusterName, normState )
 
 		# get the MFnSkinCluster for clusterName
