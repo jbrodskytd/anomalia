@@ -91,7 +91,7 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl):
     cmds.setAttr(pma2 + '.input3D[1].input3Dz', cmds.getAttr(pelvis_ctrl + '.translateZ'))
     
     mp = cmds.createNode("multiplyDivide")
-    cmds.setAttr(mp + ".operation", 1)
+    cmds.setAttr(mp + ".operation", 2)
     
     cmds.addAttr(hipCtrl, at='float', ln='weightX', dv=0.5, min=0, h=False, k=True)
     cmds.addAttr(hipCtrl, at='float', ln='weightY', dv=0.5, min=0, h=False, k=True)
@@ -103,7 +103,8 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl):
     cmds.connectAttr(pma+'.output3D.output3Dz', placer_hipNull_parentZ[0] + '.' + placer[0] + 'W0')
 
     cmds.connectAttr(pma2 + '.output3D', mp + '.input1')
-    cmds.setAttr(mp + '.input2',2,2,2, type = 'float3')
+    cmds.connectAttr(foot_ctrl + '.scale', mp + '.input2')
+    #cmds.setAttr(mp + '.input2',2,2,2, type = 'float3')
     cmds.connectAttr(mp+".output",placer_footCtrl_point[0]+".offset")
     
     cmds.connectAttr(placer_hipNull_parentX[0] + '.' + placerFoot[0] + 'W1', pma+ '.input3D[1].input3Dx')
@@ -118,4 +119,3 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl):
    
 def test():
     createAutoHip("lf_leg_skin_jnt", "cn_cog_fk_ctrl", "lf_foot_ik_ctrl")
-
