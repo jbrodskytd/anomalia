@@ -92,8 +92,8 @@ def build ( char=None, cleanUp=False ):
     cmds.parent( rt_foot['systemsGrp'], rootSys['systemsGrp'])
     
     # Build AutoHips
-    autoHip.createAutoHip(lf_leg['start_ctrl'], spineSys['hipCtrl'], lf_leg['end_ctrl'])
-    autoHip.createAutoHip(rt_leg['start_ctrl'], spineSys['hipCtrl'], rt_leg['end_ctrl'])
+    autoHip.createAutoHip(lf_leg['start_ctrl'], spineSys['hipCtrl'][0], lf_leg['end_ctrl'])
+    autoHip.createAutoHip(rt_leg['start_ctrl'], spineSys['hipCtrl'][0], rt_leg['end_ctrl'])
     
     # Build Rivets
     lf_shoulder_rivet = rivet.build( targ=lf_arm['start_ctrl'], mesh='cn_body_render_mesh', side='lf', rigPart='arm', cleanUp=cleanUp )
