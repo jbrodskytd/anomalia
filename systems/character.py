@@ -111,7 +111,15 @@ def build ( char=None, cleanUp=False ):
     cmds.parent( rt_eye_rivet['follicle'], rootSys['constGrp'] )
     
     connectToPuppet()
-    
+
+    # Bind skin
+    cmds.select( cmds.listRelatives(rootSys['geoGrp']) )
+    anom.core.skinWeights.rebindSkinClusters( char )
+    anom.core.skinWeights.setSkinWeights( char )
+    cmds.reorderDeformers( 'lf_foot_contact_ffd', 'skincluster_cn_body_render_mesh', 'cn_body_render_mesh' )
+
+
+
     
 def connectToPuppet():
     '''
