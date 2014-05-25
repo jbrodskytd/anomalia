@@ -11,10 +11,21 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
     if(foot_ctrl == ''):
         print "Please define foot_ctrl"
         return
+        
+    if type(leg_jnt1) is list:
+        leg_jnt1 = pelvis_ctrl[0]
+        
+    if type(pelvis_ctrl) is list:
+        pelvis_ctrl = pelvis_ctrl[0]
+        
+    if type(foot_ctrl) is list:
+        foot_ctrl = pelvis_ctrl[0]
+        
     name = '%s_%s_%s_%s' % ( common.getSide(leg_jnt1), common.getRigPart(leg_jnt1), 'constraint', 'loc' )    
     placer = cmds.spaceLocator(n=name) 
     cmds.parent(placer[0], leg_jnt1)
     cmds.setAttr(placer[0]+".translate",0,0,0)
+    cmds.setAttr(placer[0]+".rotate",0,0,0)
     cmds.parent(placer[0], pelvis_ctrl)
     
    
