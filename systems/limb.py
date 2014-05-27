@@ -43,7 +43,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     limbStartCtrlGrp = common.insertGroup( node=limbStartCtrl.control )
 
     # creation of the end control (hand or foot)
-    limbEndCtrl = controls.Control( side=side, rigPart='limb', function=name+'_end', nodeType='ctrl', size=0.4, color=myColor, aimAxis='x' )
+    limbEndCtrl = controls.Control( side=side, rigPart='limb', function=name+'_end', nodeType='ctrl', size=0.4 + 0.2*isLeg, color=myColor, aimAxis='x' )
     limbEndCtrl.cubeCtrl()
     common.align( node=limbEndCtrl.control, target=joint3, orient=False )
     limbEndCtrlGrp = common.insertGroup( node=limbEndCtrl.control )
@@ -79,10 +79,8 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
 
     aimVec     = (1,0,0)
     aimWorldUp = (0,1,0)
-    if isLeg:
-        aimUp  = (0,0,1)
-    else:
-        aimUp  = (0,1,0)
+    if isLeg: aimUp  = (0,0,1)
+    else:     aimUp  = (0,1,0)
 
     if side == 'rt':
         aimVec = (-1,0,0)
@@ -298,6 +296,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     # CLEAN UP
     #
     if cleanUp:
+        cmds.setAttr( ikHandle+'.v', 0 )
         cmds.parent( ikHandle, limbEndCtrl.control )
         cmds.setAttr( lowTwistDict['twist_curve']+'.inheritsTransform', 0 )
         cmds.setAttr( upTwistDict['twist_curve']+'.inheritsTransform', 0 )
@@ -318,8 +317,10 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
     returnDic = { 'ikHandle'   : ikHandle,
                   'jointList'  : [ joint1, joint2, joint3, joint4 ],
                   'poleVector' : pvCtrl,
+                  'poleVector_grp' : pvCtrlGrp,
                   'start_ctrl' : limbStartCtrl.control,
                   'end_ctrl'   : limbEndCtrl.control,
+                  'end_ctrl_grp'   : limbEndCtrlGrp,
                   'skinJoints_group' : [ upTwistDict['joints_group'], lowTwistDict['joints_group'] ],
                   'limbSystem_grp'   : systemGrp,
                   'stretch_positions': [ ssStartPos, ssEndPos ]

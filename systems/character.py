@@ -51,6 +51,8 @@ def build ( char=None, cleanUp=False ):
     
     rt_leg = anom.systems.limb.build( startJoint='rt_leg_1_defJnt', middleJoint='rt_knee_1_defJnt', endJoint='rt_foot_defJnt', extraJoint='rt_foot_end_defJnt', side='rt', name='leg', twistJointCount=5, isLeg=True )
     cmds.parent( rt_leg['limbSystem_grp'], rootSys['systemsGrp'] )
+
+
     
     # Build hands
     lf_hand = anom.systems.hand.build( side='lf', root='lf_hand_root_defJnt',
@@ -60,7 +62,7 @@ def build ( char=None, cleanUp=False ):
                                                    'pinky':'lf_hand_pinky1_defJnt'},
                                       cleanUp=cleanUp )
     cmds.parent (lf_hand['systemGrp'], rootSys['systemsGrp'])
-    cmds.parentConstraint( lf_arm['jointList'][2], lf_hand['systemGrp'], mo=1 ) # Sorry - I know it's horrible but time's running out!!
+    cmds.parentConstraint( lf_arm['jointList'][2], lf_hand['systemGrp'], mo=1 ) # Sorry - I know it's horrible but time's running out!! (Bad, bad Duncan... :p)
     
     rt_hand = anom.systems.hand.build( side='rt', root='rt_hand_root_defJnt',
                                        fingerDict={'thumb':'rt_hand_thumb1_defJnt',
@@ -77,7 +79,7 @@ def build ( char=None, cleanUp=False ):
                                  ikHandleLeg = lf_leg['ikHandle'],
                                  mesh = 'cn_body_render_mesh',
                                  stretchLoc = lf_leg['stretch_positions'][1],
-                                 cleanUp = True
+                                 cleanUp = cleanUp
                                  )
     cmds.parent( lf_foot['systemsGrp'], rootSys['systemsGrp'])
     
@@ -87,13 +89,14 @@ def build ( char=None, cleanUp=False ):
                                  ikHandleLeg = rt_leg['ikHandle'],
                                  mesh = 'cn_body_render_mesh',
                                  stretchLoc = rt_leg['stretch_positions'][1],
-                                 cleanUp = True
+                                 cleanUp = cleanUp
                                  )
     cmds.parent( rt_foot['systemsGrp'], rootSys['systemsGrp'])
     
     # Build AutoHips
-    autoHip.createAutoHip(lf_leg['start_ctrl'], spineSys['hipCtrl'][0], lf_leg['end_ctrl'])
-    autoHip.createAutoHip(rt_leg['start_ctrl'], spineSys['hipCtrl'][0], rt_leg['end_ctrl'])
+    lf_autoHip = autoHip.createAutoHip(lf_leg['start_ctrl'], spineSys['hipCtrl'][0], lf_leg['end_ctrl'])
+    rt_autoHip = autoHip.createAutoHip(rt_leg['start_ctrl'], spineSys['hipCtrl'][0], rt_leg['end_ctrl'])
+    cmds.parent( lf_autoHip['autoHipSystem_grp'], rt_autoHip['autoHipSystem_grp'], rootSys['systemsGrp'])
     
     # Build Rivets
     lf_shoulder_rivet = rivet.build( targ=lf_arm['start_ctrl'], mesh='cn_body_render_mesh', side='lf', rigPart='arm', cleanUp=cleanUp )
@@ -118,7 +121,20 @@ def build ( char=None, cleanUp=False ):
     anom.core.skinWeights.setSkinWeights( char )
     cmds.reorderDeformers( 'lf_foot_contact_ffd', 'skincluster_cn_body_render_mesh', 'cn_body_render_mesh' )
 
+    # Make everything follow root the evil way
+    cmds.parentConstraint( rootSys['constGrp'][0], rootSys['systemsGrp'][0], mo=1 )
+    cmds.scaleConstraint ( rootSys['constGrp'][0], rootSys['systemsGrp'][0], mo=1 )
 
+    # finally hide defJnts
+    if cleanUp:
+        cmds.setAttr( rootSys['defJntsGrp'][0]+'.v', 0 )
+        for fol in [ lf_shoulder_rivet['follicle'], rt_shoulder_rivet['follicle'], lf_eye_rivet['follicle'], rt_eye_rivet['follicle'] ]:
+            cmds.setAttr( fol+'.v', 0 )
+
+    # create a Layer for the meshes
+    cmds.createDisplayLayer( name='MESH_layer', empty=True )
+    cmds.editDisplayLayerMembers( 'MESH_layer', rootSys['geoGrp'], noRecurse=True )
+    cmds.setAttr( 'MESH_layer.displayType', 2 ) # unselectable
 
     
 def connectToPuppet():

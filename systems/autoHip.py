@@ -1,7 +1,7 @@
 import maya.cmds as cmds
 from anomalia.core import common, controls
 
-def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl):
+def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
     if(leg_jnt1 == ''):
         print "Please define leg_jnt1"
         return
@@ -39,23 +39,30 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl):
         col = 'red'
     else:
         col = 'blue'
-    hipCtrlObj = controls.Control( side = common.getSide(leg_jnt1), rigPart = "hip", function = "autoHip", nodeType = "ctrl", size = .4, color = col, aimAxis = "z" ) #cmds.circle(r=.3, n=name) #TODO: create proper controller, positioning
+
+    flip = True
+    if common.getSide(leg_jnt1) == 'lf': flip = False
+
+    hipCtrlObj = controls.Control( side = common.getSide(leg_jnt1), rigPart = "hip", function = "autoHip", nodeType = "ctrl", size = .4, color = col, aimAxis = "z", flip=flip ) #cmds.circle(r=.3, n=name) #TODO: create proper controller, positioning
     hipCtrlObj.controlName = name
     hipCtrlObj.pinCtrl()
     
     hipCtrl = name
+    '''
     shape = cmds.listRelatives(hipCtrl)
+    
     cmds.select(clear = True)
     cmds.select(shape[0] + ".cv[:]")
     cmds.select(shape[1] + ".cv[:]", add = True)
-    
+        
     if common.getSide(leg_jnt1) == 'lf':
         cmds.rotate(0,0,-90, r=1)
     else:
         cmds.rotate(0,0,90, r=1)
     
     cmds.select(clear = True)
-    
+    '''
+
     name = '%s_%s_%s_%s' % ( common.getSide(leg_jnt1), 'hip', 'autoHip', 'null' )
     hipNull = cmds.group(n=name, em = True)
 
@@ -71,12 +78,12 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl):
 
 
     pelvis_autoHip_parent = cmds.parentConstraint(pelvis_ctrl, hipGrp, mo = False)
-    cmds.parentConstraint(hipCtrl, leg_jnt1, mo = False)
-
-
+    
     placer_hipNull_parentX = cmds.parentConstraint(placer, placerFoot, hipNull, w=0.5, mo = False, st = ['y','z'], sr = ['x','y','z'])
     placer_hipNull_parentY = cmds.parentConstraint(placer, placerFoot, hipNull, w=0.5, mo = False, st = ['x','z'], sr = ['x','y','z'])
     placer_hipNull_parentZ = cmds.parentConstraint(placer, placerFoot, hipNull, w=0.5, mo = False, st = ['x','y'], sr = ['x','y','z'])
+    
+    cmds.parentConstraint(hipCtrl, leg_jnt1, mo = True)
 
     pma = cmds.createNode("plusMinusAverage")
     
@@ -115,7 +122,14 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl):
     cmds.connectAttr(hipCtrl + '.weightY', placer_hipNull_parentY[0] + '.' + placerFoot[0] + 'W1')
     cmds.connectAttr(hipCtrl + '.weightZ', placer_hipNull_parentZ[0] + '.' + placerFoot[0] + 'W1')
 
-    
+    if cleanUp:
+        hideList = [ placer[0], placerFoot[0] ]
+        for obj in hideList:
+            cmds.setAttr( obj+'.v', 0 )
+
+    returnDic = {'autoHipSystem_grp' : hipGrp  }
+
+    return returnDic
    
 def test():
     createAutoHip("lf_leg_skin_jnt", "cn_cog_fk_ctrl", "lf_foot_ik_ctrl")

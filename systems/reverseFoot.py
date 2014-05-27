@@ -437,6 +437,7 @@ def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mes
 	# hide const / utility grp
 	if cleanUp == 1:
 		cmds.setAttr( grpConst + '.visibility', 0 )
+		cmds.setAttr( grpJnts + '.visibility', 0 )
 	
 	
 	outDict['systemsGrp'] = grpSystem
