@@ -2,6 +2,8 @@ import maya.cmds as cmds
 from anomalia.core import common, controls
 
 def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
+    # input validation
+    
     if(leg_jnt1 == ''):
         print "Please define leg_jnt1"
         return
@@ -21,30 +23,51 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
     if type(foot_ctrl) is list:
         foot_ctrl = pelvis_ctrl[0]
         
+    #locator under pelvis on position of upper leg
     name = '%s_%s_%s_%s' % ( common.getSide(leg_jnt1), common.getRigPart(leg_jnt1), 'constraint', 'loc' )    
     placer = cmds.spaceLocator(n=name) 
     cmds.parent(placer[0], leg_jnt1)
     cmds.setAttr(placer[0]+".translate",0,0,0)
     cmds.setAttr(placer[0]+".rotate",0,0,0)
     cmds.parent(placer[0], pelvis_ctrl)
+    cmds.setAttr(placer[0]+".scale",1,1,1)
+
+    #duplicate locator for bind position for keeping world transforms of hip in case of rotation and translation of pelvis
+    name = '%s_%s_%s_%s' % ( common.getSide(leg_jnt1), 'hip', 'bind', 'loc' )
+    #hipBindPlacer = cmds.duplicate(placer, n=name)
+    placer_WT = cmds.createNode('decomposeMatrix')
+    cmds.connectAttr(placer[0] + '.worldMatrix', placer_WT + '.inputMatrix')
+
+    #pelvisNull is zeroed pelvis transform group under pelvis
+    name = '%s_%s_%s_%s' % ( common.getSide(leg_jnt1), 'hip', 'bind', 'grp' )
+    pelvisNull = cmds.group(n=name, em=True)
+    cmds.parent(pelvisNull, pelvis_ctrl)
+    cmds.setAttr(pelvisNull+".translate",0,0,0)
+    cmds.setAttr(pelvisNull+".rotate",0,0,0)
+    cmds.setAttr(pelvisNull+".inheritsTransform",0)
     
-   
+    #setAttr "lf_hip_bind_grp.inheritsTransform" 0;
+    
+    
+    #pelvisPosGrp is group with transform of pelvis under foot
     name = '%s_%s_%s_%s' % ( common.getSide(leg_jnt1), 'footCtrl', 'constraint', 'grp' )
     
-    placerFootGrp = cmds.group(n=name, em = True)
-    cmds.parent(placerFootGrp, foot_ctrl)
-    cmds.setAttr(placerFootGrp+".translate",0,0,0)
-    cmds.parent(placerFootGrp, pelvis_ctrl)
-   
+    pelvisPosGrp = cmds.group(n=name, em = True)
+    cmds.parent(pelvisPosGrp, pelvis_ctrl)
+    cmds.setAttr(pelvisPosGrp+".translate",0,0,0)
+    cmds.parent(pelvisPosGrp, foot_ctrl)
+    pelvisNullPoint = cmds.pointConstraint(pelvisPosGrp, pelvisNull)
+    
+    #placerFoot is locator under pelvisPosGrp with trasform of upper leg and constrained to foot #--------
     name = '%s_%s_%s_%s' % ( common.getSide(leg_jnt1), "footCtrl", 'constraint', 'loc' )    
     placerFoot = cmds.spaceLocator(n=name)
     cmds.parent(placerFoot[0], leg_jnt1)
     cmds.setAttr(placerFoot[0]+".translate",0,0,0)
-    cmds.parent(placerFoot[0], placerFootGrp)
+    cmds.parent(placerFoot[0], pelvisNull) #----------
     
-    placer_footCtrl_point = cmds.pointConstraint(foot_ctrl, placerFootGrp, w=1, mo = False)
+    placer_footCtrl_point = cmds.pointConstraint(pelvisPosGrp, pelvisNull, w=1, mo = False) #pelvisPosGrp -> pelvisNull < placerFoot
     
-
+    #creating hip controler
     name = '%s_%s_%s_%s' % ( common.getSide(leg_jnt1), 'hip', 'autoHip', 'ctrl' )
     if common.getSide(leg_jnt1) == 'rt':
         col = 'red'
@@ -73,7 +96,8 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
     
     cmds.select(clear = True)
     '''
-
+    
+    #creating hipCTRL hiearchy hipGrp < hipNull < hipCtrl
     name = '%s_%s_%s_%s' % ( common.getSide(leg_jnt1), 'hip', 'autoHip', 'null' )
     hipNull = cmds.group(n=name, em = True)
 
@@ -82,56 +106,85 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
 
     cmds.parent(hipCtrl, hipNull)
     cmds.parent(hipNull, hipGrp)
-
+    
+    #moving hipGrp to upper leg
     cmds.setAttr(hipCtrl+".translate", 0,0,0)
     tempPos = cmds.xform(leg_jnt1,q=1,ws=1, rp=1, a=1)
     cmds.setAttr(hipGrp+".translate", tempPos[0], tempPos[1], tempPos[2])
 
-
+    #pelvis_ctrl -> hipGrp
     pelvis_autoHip_parent = cmds.parentConstraint(pelvis_ctrl, hipGrp, mo = False)
     
+    #parent constraint of hipNull translating between footPlacer and pelvisPlacer
     placer_hipNull_parentX = cmds.parentConstraint(placer, placerFoot, hipNull, w=0.5, mo = False, st = ['y','z'], sr = ['x','y','z'])
     placer_hipNull_parentY = cmds.parentConstraint(placer, placerFoot, hipNull, w=0.5, mo = False, st = ['x','z'], sr = ['x','y','z'])
     placer_hipNull_parentZ = cmds.parentConstraint(placer, placerFoot, hipNull, w=0.5, mo = False, st = ['x','y'], sr = ['x','y','z'])
     
+    # hipCtrl-> upperLeg
     cmds.parentConstraint(hipCtrl, leg_jnt1, mo = True)
-
-    pma = cmds.createNode("plusMinusAverage")
     
-    cmds.setAttr(pma + '.operation', 2)
-    cmds.setAttr(pma + '.input3D[0]', 1,1,1, type="float3")
+    #inverseWeight
+    pmaInverseWeight = cmds.createNode("plusMinusAverage")
     
+    cmds.setAttr(pmaInverseWeight + '.operation', 2)
+    cmds.setAttr(pmaInverseWeight + '.input3D[0]', 1,1,1, type="float3")
+    
+    #scale compensation
+    mp = cmds.createNode("multiplyDivide")
+    cmds.setAttr(mp + ".operation", 2)
+    
+    cmds.connectAttr(placer_WT + '.outputTranslate', mp + '.input1')
+    cmds.connectAttr(placer_WT + '.outputScale', mp + '.input2')
+    #cmds.setAttr(mp + '.input2',2,2,2, type = 'float3')
+    
+    pelvis_WT = cmds.createNode('decomposeMatrix')
+    cmds.connectAttr(pelvis_ctrl + '.worldMatrix', pelvis_WT + '.inputMatrix')
+    
+    #Transform offset to move hip full with pelvis, but weighted with foot
     pma2 = cmds.createNode("plusMinusAverage")
     cmds.setAttr(pma2 + '.operation', 2)
+    cmds.connectAttr(mp + '.output', pma2 + '.input3D[0]')
+    #ws = cmds.xform(pelvisNull, q=True, t=True, ws=True)
+    ws = cmds.xform(placer, q=True, t=True, ws=True)
+    #ws2 = cmds.xform(pelvis_ctrl, q=True, t=True, ws=True)
+    #cmds.setAttr(pma2 + '.input3D[1]', ws1[0]-ws2[0],ws1[1]-ws2[1],ws1[2]-ws2[2])
+    cmds.setAttr(pma2 + '.input3D[1]', ws[0],ws[1],ws[2])
+    #cmds.connectAttr(mp + '.output', pma2 + '.input3D[2]')
+    #cmds.connectAttr(pelvis_WT + '.outputTranslate', pma2 + '.input3D[2]')
+    
+    
+    
+    '''
     cmds.connectAttr(pelvis_ctrl + '.translate', pma2 + '.input3D[0]')
     cmds.setAttr(pma2 + '.input3D[1].input3Dx', cmds.getAttr(pelvis_ctrl + '.translateX'))
     cmds.setAttr(pma2 + '.input3D[1].input3Dy', cmds.getAttr(pelvis_ctrl + '.translateY'))
     cmds.setAttr(pma2 + '.input3D[1].input3Dz', cmds.getAttr(pelvis_ctrl + '.translateZ'))
-    
-    mp = cmds.createNode("multiplyDivide")
-    cmds.setAttr(mp + ".operation", 2)
-    
-    cmds.addAttr(hipCtrl, at='float', ln='weightX', dv=0.5, min=0, h=False, k=True)
-    cmds.addAttr(hipCtrl, at='float', ln='weightY', dv=0.5, min=0, h=False, k=True)
-    cmds.addAttr(hipCtrl, at='float', ln='weightZ', dv=0.5, min=0, h=False, k=True)
+    '''
     
     
-    cmds.connectAttr(pma+'.output3D.output3Dx', placer_hipNull_parentX[0] + '.' + placer[0] + 'W0')
-    cmds.connectAttr(pma+'.output3D.output3Dy', placer_hipNull_parentY[0] + '.' + placer[0] + 'W0')
-    cmds.connectAttr(pma+'.output3D.output3Dz', placer_hipNull_parentZ[0] + '.' + placer[0] + 'W0')
-
-    cmds.connectAttr(pma2 + '.output3D', mp + '.input1')
-    cmds.connectAttr(foot_ctrl + '.scale', mp + '.input2')
-    #cmds.setAttr(mp + '.input2',2,2,2, type = 'float3')
-    cmds.connectAttr(mp+".output",placer_footCtrl_point[0]+".offset")
     
-    cmds.connectAttr(placer_hipNull_parentX[0] + '.' + placerFoot[0] + 'W1', pma+ '.input3D[1].input3Dx')
-    cmds.connectAttr(placer_hipNull_parentY[0] + '.' + placerFoot[0] + 'W1', pma+ '.input3D[1].input3Dy')
-    cmds.connectAttr(placer_hipNull_parentZ[0] + '.' + placerFoot[0] + 'W1', pma+ '.input3D[1].input3Dz')
+    #inverse weight to second weight
+    cmds.connectAttr(placer_hipNull_parentX[0] + '.' + placerFoot[0] + 'W1', pmaInverseWeight+ '.input3D[1].input3Dx')
+    cmds.connectAttr(placer_hipNull_parentY[0] + '.' + placerFoot[0] + 'W1', pmaInverseWeight+ '.input3D[1].input3Dy')
+    cmds.connectAttr(placer_hipNull_parentZ[0] + '.' + placerFoot[0] + 'W1', pmaInverseWeight+ '.input3D[1].input3Dz')
+    cmds.connectAttr(pmaInverseWeight+'.output3D.output3Dx', placer_hipNull_parentX[0] + '.' + placer[0] + 'W0')
+    cmds.connectAttr(pmaInverseWeight+'.output3D.output3Dy', placer_hipNull_parentY[0] + '.' + placer[0] + 'W0')
+    cmds.connectAttr(pmaInverseWeight+'.output3D.output3Dz', placer_hipNull_parentZ[0] + '.' + placer[0] + 'W0')
+    
+    
+    
+    
+    #add weight attributes and connecting it
+    cmds.addAttr(hipCtrl, at='float', ln='weightX', dv=0.3, min=0, h=False, k=True)
+    cmds.addAttr(hipCtrl, at='float', ln='weightY', dv=0.3, min=0, h=False, k=True)
+    cmds.addAttr(hipCtrl, at='float', ln='weightZ', dv=0.3, min=0, h=False, k=True)
     
     cmds.connectAttr(hipCtrl + '.weightX', placer_hipNull_parentX[0] + '.' + placerFoot[0] + 'W1')
     cmds.connectAttr(hipCtrl + '.weightY', placer_hipNull_parentY[0] + '.' + placerFoot[0] + 'W1')
     cmds.connectAttr(hipCtrl + '.weightZ', placer_hipNull_parentZ[0] + '.' + placerFoot[0] + 'W1')
+
+    #making it really offset by pelvis
+    cmds.connectAttr(pma2+".output3D",placer_footCtrl_point[0]+".offset")
 
     if cleanUp:
         hideList = [ placer[0], placerFoot[0] ]
@@ -144,3 +197,4 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
    
 def test():
     createAutoHip("lf_leg_skin_jnt", "cn_cog_fk_ctrl", "lf_foot_ik_ctrl")
+
