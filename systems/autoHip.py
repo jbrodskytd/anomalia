@@ -96,6 +96,19 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
     
     cmds.select(clear = True)
     '''
+    # relative point separating pelvis parent transformations
+    pelvisParent = cmds.listRelatives('cn_spine_hips_ctrl', p = True)
+    name = '%s_%s_%s_%s' % ( common.getSide(leg_jnt1), 'pelvisParentTransform', 'autoHip', 'grp' )
+    pelvisParentTransform = cmds.group(n=name, em = True)
+    cmds.parent(pelvisParentTransform, pelvis_ctrl)
+    cmds.setAttr(pelvisParentTransform + '.translate', 0,0,0)
+    cmds.setAttr(pelvisParentTransform + '.rotate', 0,0,0)
+    cmds.setAttr(pelvisParentTransform + '.scale', 1,1,1)
+    cmds.parent(pelvisParentTransform, pelvisParent[0])
+    
+    pelvisParentTransform_WT = cmds.createNode('decomposeMatrix')
+    cmds.connectAttr(pelvisParentTransform + '.worldMatrix', pelvisParentTransform_WT + '.inputMatrix')
+    
     
     #creating hipCTRL hiearchy hipGrp < hipNull < hipCtrl
     name = '%s_%s_%s_%s' % ( common.getSide(leg_jnt1), 'hip', 'autoHip', 'null' )
@@ -148,7 +161,8 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
     ws = cmds.xform(placer, q=True, t=True, ws=True)
     #ws2 = cmds.xform(pelvis_ctrl, q=True, t=True, ws=True)
     #cmds.setAttr(pma2 + '.input3D[1]', ws1[0]-ws2[0],ws1[1]-ws2[1],ws1[2]-ws2[2])
-    cmds.setAttr(pma2 + '.input3D[1]', ws[0],ws[1],ws[2])
+    #cmds.setAttr(pma2 + '.input3D[1]', ws[0],ws[1],ws[2])
+    cmds.connectAttr(pelvisParentTransform_WT + '.outputTranslate', pma2 + '.input3D[1]')
     #cmds.connectAttr(mp + '.output', pma2 + '.input3D[2]')
     #cmds.connectAttr(pelvis_WT + '.outputTranslate', pma2 + '.input3D[2]')
     
