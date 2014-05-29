@@ -243,10 +243,11 @@ def rebindSkinClusters( char = '', meshes = [] ):
 		
 		# unbind mesh if skincluster exists
 		clusterName = mel.eval('findRelatedSkinCluster '+ mesh)
-		if clusterName != '': cmds.skinCluster( mesh, edit = True, unbind = True )
+		if clusterName != '':
+			cmds.skinCluster( mesh, edit = True, unbind = True )
 		
 		# rebind
-		skincluster = cmds.skinCluster( weights['infs'], mesh, name = 'skincluster_' + str( mesh ), toSelectedBones = True, maximumInfluences = 3, obeyMaxInfluences = True, skinMethod = 0  )
+		skincluster = cmds.skinCluster( weights['infs'], mesh, name = 'skincluster_' + str( mesh ), toSelectedBones = True, maximumInfluences = 5, obeyMaxInfluences = False, skinMethod = 0  )[0]
 		skinclusters.append( skincluster )
 	
 	showDialog( 'Succss!', 'Skinclusters rebound on [ %s ] from file:\n"%s_skin.py"' % ( ', '.join(meshes), skinWeightsFile) )

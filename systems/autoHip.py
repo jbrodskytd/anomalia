@@ -191,6 +191,11 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
         for obj in hideList:
             cmds.setAttr( obj+'.v', 0 )
 
+        cmds.setAttr( hipCtrl + '.sx', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( hipCtrl + '.sy', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( hipCtrl + '.sz', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( hipCtrl + '.visibility', lock=True, keyable=False, channelBox=False )
+
     returnDic = {'autoHipSystem_grp' : hipGrp  }
 
     return returnDic

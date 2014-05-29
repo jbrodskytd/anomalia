@@ -7,7 +7,6 @@
 from maya import mel, cmds
 from anomalia.systems import twistSection
 from anomalia.core import common, controls
-from anomalia.core.utils import showDialog
 
 
 def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, side=None, name=None, twistJointCount=None, isLeg=False, cleanUp=True ):
@@ -287,14 +286,73 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
 
     # ikHandle follow endCtrl
     cmds.pointConstraint( limbEndCtrl.control, ikHandle )
-    
+
     # extra attributes to endCtrl
     cmds.addAttr( limbEndCtrl.control, ln='twist', k=True )
     cmds.connectAttr( limbEndCtrl.control+'.twist', ikHandle+'.twist' )
 
+    ## ik lock
+    # add attribute to control
+    if ( cmds.attributeQuery( 'lock', node=limbEndCtrl.control, exists=True ) ) == True:
+         print( 'Attribute %s already exists on %s.' % ( 'lock', limbEndCtrl ) )
+    else:
+        cmds.addAttr( limbEndCtrl.control, longName='lock', attributeType='float', keyable=True, min=0.0, max=1.0, dv=0.0 )
+
+    # create distance locs
+    startLoc = cmds.spaceLocator( name=side + '_' + name + '_start_loc' )[0]
+    middleLoc = cmds.spaceLocator( name=side + '_' + name + '_middle_loc' )[0]
+    endLoc = cmds.spaceLocator( name=side + '_' + name + '_end_loc' )[0]
+    upDist = cmds.createNode( 'distanceDimShape' )
+    lowDist = cmds.createNode( 'distanceDimShape' )
+
+    cmds.connectAttr( cmds.listRelatives(startLoc)[0] + '.worldPosition[0]', upDist + '.startPoint' )
+    cmds.connectAttr( cmds.listRelatives(middleLoc)[0] + '.worldPosition[0]', upDist + '.endPoint' )
+    cmds.connectAttr( cmds.listRelatives(middleLoc)[0] + '.worldPosition[0]', lowDist + '.startPoint' )
+    cmds.connectAttr( cmds.listRelatives(endLoc)[0] + '.worldPosition[0]', lowDist + '.endPoint' )
+
+    cmds.pointConstraint( limbStartCtrl.control, startLoc )
+    cmds.pointConstraint( pvCtrl.control, middleLoc )
+    cmds.pointConstraint( limbEndCtrl.control, endLoc )
+
+    # create and connect blend utilities
+    bl2aLockUp = cmds.shadingNode( 'blendTwoAttr', asUtility=True )
+    bl2aLockUp = cmds.rename(bl2aLockUp, common.getName(node=bl2aLockUp, side=side, rigPart=name, function='lock_up', nodeType='bl2a'))
+    bl2aLockLow = cmds.shadingNode( 'blendTwoAttr', asUtility=True )
+    bl2aLockLow = cmds.rename(bl2aLockLow, common.getName(node=bl2aLockLow, side=side, rigPart=name, function='lock_low', nodeType='bl2a'))
+
+    cmds.connectAttr( ssKeyUp+'.output', bl2aLockUp + '.input[0]' )
+    cmds.connectAttr( upDist + '.distance', bl2aLockUp + '.input[1]' )
+    cmds.connectAttr( limbEndCtrl.control + '.lock', bl2aLockUp + '.attributesBlender' )
+    cmds.connectAttr( bl2aLockUp + '.output', joint2 + '.translateX', force = True )
+
+    cmds.connectAttr( ssKeyLow+'.output', bl2aLockLow + '.input[0]' )
+    cmds.connectAttr( lowDist + '.distance', bl2aLockLow + '.input[1]' )
+    cmds.connectAttr( limbEndCtrl.control + '.lock', bl2aLockLow + '.attributesBlender' )
+    cmds.connectAttr( bl2aLockLow + '.output', joint3 + '.translateX', force = True )
+
+    # get distance nodes transforms and rename
+    upDist = cmds.listRelatives( upDist, parent=True )[0]
+    upDist = cmds.rename( upDist, common.getName(node=upDist, side=side, rigPart=name, function='up', nodeType='distance') )
+    lowDist = cmds.listRelatives( lowDist, parent=True )[0]
+    lowDist = cmds.rename( lowDist, common.getName(node=lowDist, side=side, rigPart=name, function='low', nodeType='distance') )
+
+    # negate distance output if side = rt
+    if side == 'rt':
+        mdivLockRev = cmds.shadingNode( 'multiplyDivide', asUtility=True)
+        mdivLockRev = cmds.rename( mdivLockRev, common.getName(node=mdivLockRev, side=side, rigPart=name, function='lock_dist_rev', nodeType='mdiv') )
+        cmds.setAttr( mdivLockRev + '.input2', -1, -1, -1 )
+        cmds.connectAttr( upDist + '.distance', mdivLockRev + '.input1X', force=True )
+        cmds.connectAttr( mdivLockRev + '.outputX', bl2aLockUp + '.input[1]', force=True )
+        cmds.connectAttr( lowDist + '.distance', mdivLockRev + '.input1Y', force=True )
+        cmds.connectAttr( mdivLockRev + '.outputY', bl2aLockLow + '.input[1]', force=True )
+
+    # group lock utilities
+    lockGrp = cmds.group( startLoc, middleLoc, endLoc, upDist, lowDist, name=side + '_' + name + '_lock_grp' )
+
     #
     # CLEAN UP
     #
+    # hide objects
     if cleanUp:
         cmds.setAttr( ikHandle+'.v', 0 )
         cmds.parent( ikHandle, limbEndCtrl.control )
@@ -308,10 +366,27 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
 
         # parenting everything under one group
         cmds.parent( limbStartCtrlGrp, limbEndCtrlGrp, pvCtrlGrp, systemGrp ) # ctrls
-        hideGrp = cmds.group( joint1, startNonRollGrp, ssGrp, crvJntA1, crvJntD1Grp, lowTwistDict['twist_curve'], upTwistDict['twist_curve'], avgGrp, lowTwistDict['motionPaths_group'], upTwistDict['motionPaths_group'], upTwistDict['joints_group'], lowTwistDict['joints_group'], name=systemGrp.replace('_grp', '_hide_grp'), parent=systemGrp )
+        hideGrp = cmds.group( joint1, startNonRollGrp, ssGrp, lockGrp, crvJntA1, crvJntD1Grp, lowTwistDict['twist_curve'], upTwistDict['twist_curve'], avgGrp, lowTwistDict['motionPaths_group'], upTwistDict['motionPaths_group'], upTwistDict['joints_group'], lowTwistDict['joints_group'], name=systemGrp.replace('_grp', '_hide_grp'), parent=systemGrp )
         cmds.setAttr( hideGrp+'.v', 0 )
 
         cmds.parentConstraint( limbStartCtrl.control, hideGrp, mo=True )
+
+        # lock and hide attributes
+        cmds.setAttr( limbStartCtrl.control + '.sx', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( limbStartCtrl.control + '.sy', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( limbStartCtrl.control + '.sz', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( limbStartCtrl.control + '.visibility', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( pvCtrl.control + '.rx', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( pvCtrl.control + '.ry', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( pvCtrl.control + '.rz', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( pvCtrl.control + '.sx', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( pvCtrl.control + '.sy', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( pvCtrl.control + '.sz', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( pvCtrl.control + '.visibility', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( limbEndCtrl.control + '.visibility', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( limbEndCtrl.control + '.sx', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( limbEndCtrl.control + '.sy', lock=True, keyable=False, channelBox=False )
+        cmds.setAttr( limbEndCtrl.control + '.sz', lock=True, keyable=False, channelBox=False )
 
 
     returnDic = { 'ikHandle'   : ikHandle,
