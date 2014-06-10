@@ -226,7 +226,7 @@ def build( startJoint=None, middleJoint=None, endJoint=None, extraJoint=None, si
 
     cmds.pointConstraint( joint2, avgGrp )
     cons     = cmds.orientConstraint( joint1, joint2, avgGrp )[0]
-    cmds.setAttr( cons+'.interpType', 2 ) # shortest
+    cmds.setAttr( cons+'.interpType', 0 ) # noFlip
     
     # wrist/foot joints
     crvJntD1 = cmds.createNode( 'joint', n=side+'_'+name+'_low_curve_1_jnt')
