@@ -55,7 +55,8 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
     pelvisPosGrp = cmds.group(n=name, em = True)
     cmds.parent(pelvisPosGrp, pelvis_ctrl)
     cmds.setAttr(pelvisPosGrp+".translate",0,0,0)
-    cmds.parent(pelvisPosGrp, foot_ctrl)
+    cmds.pointConstraint(foot_ctrl,pelvisPosGrp, mo=True)
+    #cmds.parent(pelvisPosGrp, foot_ctrl)
     pelvisNullPoint = cmds.pointConstraint(pelvisPosGrp, pelvisNull)
     
     #placerFoot is locator under pelvisPosGrp with trasform of upper leg and constrained to foot #--------
