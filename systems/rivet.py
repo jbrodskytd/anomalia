@@ -15,7 +15,12 @@ def build( targ=None, mesh=None, side=None, rigPart=None, cleanUp=False ):
         mesh = cmds.listRelatives(mesh, s=1)[0]
     
     targPos = cmds.xform( targ, q=1, ws=1, t=1 )
+    pmm1 = cmds.createNode('pointMatrixMult')
+    cmds.setAttr('%s.inPoint' % pmm1, targPos[0], targPos[1], targPos[2] )
+    cmds.connectAttr('%s.worldInverseMatrix[0]' % mesh, '%s.inMatrix' % pmm1)
+    targPos = cmds.getAttr('%s.output' % pmm1)[0]
     print targPos
+
     closestPoint = cmds.createNode('closestPointOnMesh')
     cmds.setAttr( '%s.inPosition' % closestPoint, targPos[0], targPos[1], targPos[2] )
     cmds.connectAttr( '%s.worldMesh[0]' % mesh, '%s.inMesh' % closestPoint )
@@ -47,6 +52,7 @@ def build( targ=None, mesh=None, side=None, rigPart=None, cleanUp=False ):
     cmds.setAttr( '%s.t' % constGrp, targPos[0], targPos[1], targPos[2] )
     cmds.parent(constGrp, follXform)
     
+    cmds.delete( pmm1 )
     cmds.delete( closestPoint )
     
     return {'follicle':follXform, 'constGrp':constGrp}

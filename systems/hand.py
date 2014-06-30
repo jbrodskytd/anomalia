@@ -114,8 +114,10 @@ def buildFinger( side, name, rootJnt, rootGrp, cleanUp ):
         
         if cleanUp:
             lockAxes = ['t%s' % axis for axis in ['x', 'y', 'z'] if not axis == twistAxis]
+            attrList=lockAxes + ['sx', 'sy', 'sz', 'visibility']
             for c in ctrls:
-                common.attrCtrl(nodeList=[c], attrList=lockAxes + ['sx', 'sy', 'sz', 'visibility'])
+                common.attrCtrl(nodeList=[c], attrList=attrList)
+            #common.attrCtrl(nodeList=[ctrls[-1]], attrList='t%s' % twistAxis) 
         
     return {'jnts':jnts, 'ctrls':ctrls}
         
@@ -130,7 +132,7 @@ def isExtendJnt( jnt, tolerance=0.01 ):
     if children:
         childJnt = children[0]
     else:
-        return False # Must be the end of the digit   
+        return True # Must be the end of the digit   
     
     jntPos = cmds.xform( jnt, ws=1, t=1, q=1 )
     childPos = cmds.xform( childJnt, ws=1, t=1, q=1 )
