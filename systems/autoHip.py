@@ -22,7 +22,10 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
         
     if type(foot_ctrl) is list:
         foot_ctrl = pelvis_ctrl[0]
-        
+
+    #load matrixNodes plugin if it isn't already loaded
+    cmds.loadPlugin('matrixNodes.mll', qt = True)
+
     #locator under pelvis on position of upper leg
     name = '%s_%s_%s_%s' % ( common.getSide(leg_jnt1), common.getRigPart(leg_jnt1), 'constraint', 'loc' )    
     placer = cmds.spaceLocator(n=name) 
