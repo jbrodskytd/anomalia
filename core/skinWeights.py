@@ -140,7 +140,7 @@ def setSkinWeights( char = '', meshes = [] ):
 
 	# use default skinWeightsFile if character specific file does not exist
 	if not os.path.exists( skinWeightsFile ):
-		jointFile = os.path.join( common.getCharDir( 'defaultChar' ), 'defaultChar_joints.py' )
+		skinWeightsFile = os.path.join( common.getCharDir( 'defaultChar' ), 'defaultChar_skin.py' )
 		cmds.warning( 'Did not find skin weights file for selected character, using default character file.' )
 
 	# read skin weights from file
@@ -220,7 +220,7 @@ def rebindSkinClusters( char = '', meshes = [] ):
 
 	# use default skinWeightsFile if character specific file does not exist
 	if not os.path.exists( skinWeightsFile ):
-		jointFile = os.path.join( common.getCharDir( 'defaultChar' ), 'defaultChar_joints.py' )
+		skinWeightsFile = os.path.join( common.getCharDir( 'defaultChar' ), 'defaultChar_skin.py' )
 		cmds.warning( 'Did not find skin weights file for selected character, using default character file.' )
 
 	# read skin weights from file
