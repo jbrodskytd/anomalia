@@ -49,7 +49,7 @@ def build( targ=None, mesh=None, side=None, rigPart=None, cleanUp=False ):
     constGrp = cmds.group(empty=1)
     constGrp = cmds.rename(constGrp, common.getName(node=constGrp, side=side, rigPart=rigPart, function='rivetConst', nodeType='grp'))
     common.align(constGrp, follXform, translate=False )
-    cmds.setAttr( '%s.t' % constGrp, targPos[0], targPos[1], targPos[2] )
+    common.align(constGrp, targ, orient=False )
     cmds.parent(constGrp, follXform)
     
     cmds.delete( pmm1 )
