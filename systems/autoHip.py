@@ -62,14 +62,14 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
     #cmds.parent(pelvisPosGrp, foot_ctrl)
     pelvisNullPoint = cmds.pointConstraint(pelvisPosGrp, pelvisNull)
     
+    placer_footCtrl_point = cmds.pointConstraint(pelvisPosGrp, pelvisNull, w=1, mo = False) #pelvisPosGrp -> pelvisNull < placerFoot
+    
     #placerFoot is locator under pelvisPosGrp with trasform of upper leg and constrained to foot #--------
     name = '%s_%s_%s_%s' % ( common.getSide(leg_jnt1), "footCtrl", 'constraint', 'loc' )    
     placerFoot = cmds.spaceLocator(n=name)
-    cmds.parent(placerFoot[0], leg_jnt1)
+    cmds.parent(placerFoot[0], pelvisNull)
     cmds.setAttr(placerFoot[0]+".translate",0,0,0)
-    cmds.parent(placerFoot[0], pelvisNull) #----------
-    
-    placer_footCtrl_point = cmds.pointConstraint(pelvisPosGrp, pelvisNull, w=1, mo = False) #pelvisPosGrp -> pelvisNull < placerFoot
+    #cmds.parent(placerFoot[0], pelvisNull) #----------
     
     #creating hip controler
     name = '%s_%s_%s_%s' % ( common.getSide(leg_jnt1), 'hip', 'autoHip', 'ctrl' )
@@ -138,7 +138,8 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
     placer_hipNull_parentZ = cmds.parentConstraint(placer, placerFoot, hipNull, w=0.5, mo = False, st = ['x','y'], sr = ['x','y','z'])
     
     # hipCtrl-> upperLeg
-    cmds.parentConstraint(hipCtrl, leg_jnt1, mo = True)
+    cmds.pointConstraint(hipCtrl, leg_jnt1, mo = False)
+    cmds.orientConstraint(hipCtrl, leg_jnt1, mo = True)
     
     #inverseWeight
     pmaInverseWeight = cmds.createNode("plusMinusAverage")
