@@ -25,10 +25,9 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
 
     #load matrixNodes plugin if it isn't already loaded (if maya2012 decomposeMatrix) 
 	if '2012' in cmds.about(version=True):
-		cmds.loadPlugin('decomposeMatrix.mll', qt = True)
-	else:
-		cmds.loadPlugin('matrixNodes.mll', qt = True)
-	
+         cmds.loadPlugin('decomposeMatrix.mll', qt = True)
+    else:
+         cmds.loadPlugin('matrixNodes.mll', qt = True)
 
     #locator under pelvis on position of upper leg
     name = '%s_%s_%s_%s' % ( common.getSide(leg_jnt1), common.getRigPart(leg_jnt1), 'constraint', 'loc' )    
@@ -219,7 +218,10 @@ def createAutoHip(leg_jnt1, pelvis_ctrl, foot_ctrl, cleanUp=True):
         cmds.setAttr( hipCtrl + '.sz', lock=True, keyable=False, channelBox=False )
         cmds.setAttr( hipCtrl + '.visibility', lock=True, keyable=False, channelBox=False )
 
-    returnDic = {'autoHipSystem_grp' : hipGrp  }
+    returnDic = {
+        'autoHipSystem_grp' : hipGrp,
+        'placer': placer
+        }
 
     return returnDic
    

@@ -14,7 +14,7 @@ def build ( char=None, cleanUp=False ):
     
     if not char:
         char = 'defaultChar'
-        
+
     # import geo
     geoList = geo.importGeo(char)
     for g in geoList:
@@ -29,7 +29,7 @@ def build ( char=None, cleanUp=False ):
         p = cmds.listRelatives(j, p=1)
         if not p:
             cmds.parent(j, rootSys['defJntsGrp'])
-            
+
     # Build spine
     spineSys = spine.build( hips='cn_spine_01_defJnt', chest='cn_spine_06_defJnt', head='cn_spine_11_defJnt',numSpineJoints=6, numHeadJoints=6, twistAxis='x', bendAxis='y', cleanUp=cleanUp )
     cmds.parent(spineSys['xformGrp'], rootSys['systemsGrp'])
@@ -38,7 +38,7 @@ def build ( char=None, cleanUp=False ):
     common.align(spineTarg, spineSys['xformGrp'])
     cmds.parent(spineTarg, rootSys['constGrp'])
     cmds.parentConstraint( spineTarg, spineSys['xformGrp'] )
-    
+
     # Build limbs
     lf_arm = anom.systems.limb.build( startJoint='lf_shoulder_1_defJnt', middleJoint='lf_arm_1_defJnt', endJoint='lf_hand_defJnt', extraJoint='lf_hand_end_defJnt', side='lf', name='arm', twistJointCount=6 )
     cmds.parent( lf_arm['limbSystem_grp'], rootSys['systemsGrp'] )
@@ -97,7 +97,7 @@ def build ( char=None, cleanUp=False ):
     lf_autoHip = autoHip.createAutoHip(lf_leg['start_ctrl'], spineSys['hipCtrl'][0], lf_leg['end_ctrl'])
     rt_autoHip = autoHip.createAutoHip(rt_leg['start_ctrl'], spineSys['hipCtrl'][0], rt_leg['end_ctrl'])
     cmds.parent( lf_autoHip['autoHipSystem_grp'], rt_autoHip['autoHipSystem_grp'], rootSys['systemsGrp'])
-    
+
     # Build Rivets
     lf_shoulder_rivet = rivet.build( targ=lf_arm['start_ctrl'], mesh='cn_body_render_mesh', side='lf', rigPart='arm', cleanUp=cleanUp )
     cmds.parent( lf_shoulder_rivet['follicle'], rootSys['constGrp'] )
@@ -121,20 +121,36 @@ def build ( char=None, cleanUp=False ):
     anom.core.skinWeights.setSkinWeights( char )
     cmds.reorderDeformers( 'lf_foot_contact_ffd', 'skincluster_cn_body_render_mesh', 'cn_body_render_mesh' )
 
-    # Make everything follow root the evil way
+    # Make everything follow root the evil way | global scale
     cmds.parentConstraint( rootSys['constGrp'][0], rootSys['systemsGrp'][0], mo=1 )
     cmds.scaleConstraint ( rootSys['constGrp'][0], rootSys['systemsGrp'][0], mo=1 )
+    cmds.connectAttr( rootSys['systemsGrp'][0] + '.scale', rootSys['defJntsGrp'][0] + '.scale' )
+
+    invScale = cmds.shadingNode( 'multiplyDivide', asUtility = True, name = 'root_systems_invScale_md' )
+    cmds.setAttr( invScale + '.operation', 2 )
+    cmds.setAttr( invScale + '.input1', 1, 1, 1, type='double3' )
+    cmds.connectAttr( rootSys['systemsGrp'][0] + '.scale', invScale + '.input2' )
+
+    #connect autoHip to inverse world scale
+    cmds.connectAttr( invScale + '.output', lf_autoHip['placer'][0] + '.scale' )
+    cmds.connectAttr( invScale + '.output', rt_autoHip['placer'][0] + '.scale' )
+
+    #connect follicles to systemGrp scale this fixes errors from the offset at extreme scaling values
+    for fol in [ lf_shoulder_rivet['follicle'], rt_shoulder_rivet['follicle'], lf_eye_rivet['follicle'], rt_eye_rivet['follicle'] ]:
+        cmds.connectAttr( rootSys['systemsGrp'][0] + '.scale', fol+'.scale' )
+        cmds.setAttr( fol+'.v', 0 )
 
     # finally hide defJnts
     if cleanUp:
-        cmds.setAttr( rootSys['defJntsGrp'][0]+'.v', 0 )
-        for fol in [ lf_shoulder_rivet['follicle'], rt_shoulder_rivet['follicle'], lf_eye_rivet['follicle'], rt_eye_rivet['follicle'] ]:
-            cmds.setAttr( fol+'.v', 0 )
+        cmds.setAttr( rootSys['offsetCtrl'][0].control +'.jointsVisibility', 0 )
 
     # create a Layer for the meshes
     cmds.createDisplayLayer( name='MESH_layer', empty=True )
     cmds.editDisplayLayerMembers( 'MESH_layer', rootSys['geoGrp'], noRecurse=True )
     cmds.setAttr( 'MESH_layer.displayType', 2 ) # unselectable
+
+    cmds.rename( rootSys['allGrp'][0], '%s_root_grp' % char )
+    cmds.select( clear=True )
 
     
 def connectToPuppet():

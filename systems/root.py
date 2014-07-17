@@ -26,12 +26,21 @@ def build():
     # root ctrls
     allCtrl = controls.Control( side = "cn", rigPart = "root", function = "all", nodeType = "ctrl", size = 4, color = "green", aimAxis ="y" )
     allCtrl.circleCtrl()
+    cmds.connectAttr( allCtrl.control + '.visibility', allGrp + '.visibility' )
+    cmds.transformLimits( allCtrl.control, sx=(0.01, 1), sy=(0.01, 1), sz=(0.01, 1), esx=(True,False), esy=(True,False), esz=(True,False) )
     cmds.parent(allCtrl.control, ctrlsGrp)
     
     offsetCtrl = controls.Control( side = "cn", rigPart = "root", function = "offset", nodeType = "ctrl", size = 3, color = "green", aimAxis ="y" )
     offsetCtrl.circleCtrl()
+    cmds.transformLimits( offsetCtrl.control, sx=(0.01, 1), sy=(0.01, 1), sz=(0.01, 1), esx=(True,False), esy=(True,False), esz=(True,False) )
     cmds.parent(offsetCtrl.control, allCtrl.control)
-    
+
+    # visibility attributes on offset control for rig, joints, geo
+    cmds.setAttr( offsetCtrl.control + '.visibility', channelBox = False, keyable = False )
+    cmds.addAttr( offsetCtrl.control, longName='jointsVisibility', attributeType='bool', hidden=False, dv=True )
+    cmds.addAttr( offsetCtrl.control, longName='geoVisibility', attributeType='bool', keyable=True, dv=True )
+    cmds.addAttr( offsetCtrl.control, longName='rigVisibility', attributeType='bool', keyable=True, dv=True )
+
     # constrain group - any other systems that need to be constrained to the root can make an aligned target and put it in here
     constGrp = cmds.group(empty=True)
     constGrp = cmds.rename(constGrp, common.getName(side='cn', rigPart='root', function='constrain', nodeType='grp'))
@@ -40,28 +49,22 @@ def build():
     # systems group - subsequent systems are parented into this group
     systemsGrp = cmds.group(empty=True)
     systemsGrp = cmds.rename(systemsGrp, common.getName(side='cn', rigPart='root', function='systems', nodeType='grp'))
+    cmds.connectAttr( offsetCtrl.control + '.rigVisibility', systemsGrp + '.visibility' )
     cmds.parent( systemsGrp, allGrp )
     
     # def joints group
     defJntsGrp = cmds.group(empty=True)
     defJntsGrp = cmds.rename(defJntsGrp, common.getName(side='cn', rigPart='root', function='defJnts', nodeType='grp'))
+    cmds.connectAttr( offsetCtrl.control + '.jointsVisibility', defJntsGrp + '.visibility' )
     cmds.parent( defJntsGrp, allGrp )
     
     # geo group
     geoGrp = cmds.group(empty=True)
     geoGrp = cmds.rename(geoGrp, common.getName(side='cn', rigPart='root', function='geo', nodeType='grp'))
+    cmds.connectAttr( offsetCtrl.control + '.geoVisibility', geoGrp + '.visibility' )
     cmds.parent( geoGrp, allGrp )
     cmds.setAttr('%s.inheritsTransform' % geoGrp, False)
-    
-    # worldScaleAttr
-    cmds.aliasAttr( 'world_scale', '%s.scaleY' % allGrp )
-    cmds.connectAttr( '%s.scaleY' % allGrp, '%s.scaleX' % allGrp )
-    cmds.connectAttr( '%s.scaleY' % allGrp, '%s.scaleZ' % allGrp )
-    cmds.transformLimits( allGrp, enableScaleY=( 1, 0 ), scaleY=( 0.01, 1.0 ) )
-    
-    # alias visibility attr - this becomes the global control for the entire rig's visibility
-    cmds.aliasAttr( 'rig_vis', '%s.visibility' % allGrp )
-    
+
     # Return a dictionary with useful stuff
     returnDict = collections.defaultdict(list)
     returnDict['allGrp'].append( allGrp )
