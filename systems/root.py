@@ -37,7 +37,7 @@ def build():
 
     # visibility attributes on offset control for rig, joints, geo
     cmds.setAttr( offsetCtrl.control + '.visibility', channelBox = False, keyable = False )
-    cmds.addAttr( offsetCtrl.control, longName='jointsVisibility', attributeType='bool', hidden=False, dv=True )
+    cmds.addAttr( offsetCtrl.control, longName='jointsVisibility', attributeType='bool', keyable=True, dv=True )
     cmds.addAttr( offsetCtrl.control, longName='geoVisibility', attributeType='bool', keyable=True, dv=True )
     cmds.addAttr( offsetCtrl.control, longName='rigVisibility', attributeType='bool', keyable=True, dv=True )
 

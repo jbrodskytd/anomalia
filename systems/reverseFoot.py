@@ -229,7 +229,7 @@ def build( side = None, jntFoot = None, ctrlFoot = None, ikHandleLeg = None, mes
 	# create pivot for toe raise, parent ball ikHandle and connect
 	pivToeRaise = common.insertGroup( pivotFront )
 	pivToeRaise = cmds.rename( pivToeRaise, common.getName( node=pivToeRaise, side=side, rigPart='toe', function='raise_piv', nodeType='grp') )
-	cmds.parent( ikHandleBall, pivToeRaise )
+	cmds.parent( ikHandleBall, pivotFront )
 	cmds.connectAttr( ctrlFoot + '.toeRaise', pivToeRaise + '.rotateX' )
 	
 	# create pivot for toe tap and connect

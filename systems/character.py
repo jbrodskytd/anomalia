@@ -149,7 +149,6 @@ def build ( char=None, cleanUp=False ):
     cmds.editDisplayLayerMembers( 'MESH_layer', rootSys['geoGrp'], noRecurse=True )
     cmds.setAttr( 'MESH_layer.displayType', 2 ) # unselectable
 
-    cmds.rename( rootSys['allGrp'][0], '%s_root_grp' % char )
     cmds.select( clear=True )
 
     
